@@ -1,0 +1,268 @@
+function imageanalysisui(nd_file)
+%%%accepts an input of a bfopen file and opens a gui to quantify various
+%%%aspects
+close all
+screendim=get(0,'screensize');
+figsize=[screendim(3)*0.8 screendim(4)*0.8];
+screenpos=[screendim(3)*0.1 screendim(4)*0.1];
+pts=0;
+figure
+set(gcf,'Position',[screenpos figsize])
+cyan = [0.152941176470588 0.658823529411765 0.878431372549020];
+orange =  [0.956862745098039,0.498039215686275,0.215686274509804];
+
+%%%sets position and size of figure adjusted to monitor settings
+
+metadata=nd_file{1,2};
+
+if strcmp(metadata.get('Global DoStage'),'TRUE')==1
+    num_p=metadata.get('Global NStagePositions');
+    num_p=str2num(num_p);
+else
+    num_p=1;
+end
+if strcmp(metadata.get('Global DoZSeries'),'TRUE')==1
+    num_z=metadata.get('Global NZSteps');
+    num_z=str2num(num_z);
+else
+    num_z=1;
+end
+if strcmp(metadata.get('Global DoWave'),'TRUE')==1
+    num_c=metadata.get('Global NWavelengths');
+    num_c=str2num(num_c);
+else
+    num_c=1;
+end
+
+
+xdim=metadata.get('pixel-size-x');
+ydim=metadata.get('pixel-size-y');
+%num_t=metadata.get('Global NTimePoints');
+
+
+xdim=str2num(xdim);
+ydim=str2num(ydim);
+%num_t=str2num(num_t);
+
+%%%gets data about nd file
+
+dimensions=[num_c num_z num_p];
+
+pixeldim=[ydim xdim];
+
+alldim=[pixeldim dimensions];
+
+megastack=zeros(alldim);
+ 
+
+for i=1:num_p
+    if num_c < 4
+        for j=1:num_c
+            for q=1:num_z
+                megastack(:,:,j,q,i)=nd_file{i,1}{q+(j-1)*num_z};
+                %disp(q+(j-1)*num_z)
+            end
+        end
+    else
+        colors= [1 2 3 4];
+        drop=input('Too many colors! Please chose which channel to drop (1-4) ');
+        colors(colors==drop)=[];
+        for j=1:num_c
+            for q=1:num_z
+                megastack(:,:,j,q,i)=nd_file{i,1}{q+(colors(j)-1)*num_z};
+            end
+        end
+    end
+end
+
+
+
+%builds one gigantic stack to pull data from: X x Y x C x Z x P
+
+displayimage=megastack(:,:,1:num_c,1,1);
+
+imageToDisplay=getMulticolorImageforUI(displayimage,num_c);
+
+%builds a single RGB stack (X x Y x 3) for display
+
+img=imagesc(imageToDisplay(:,:,1));
+imAX=img.Parent;
+imageposition=[.2 .2 .75 .7];
+imAX.Position=imageposition;
+
+
+
+%set(gca,'XTick','none')
+%gca.XTickLabel='none';
+%%%
+zsliderpos=[figsize(1)*.2 figsize(2)*.05 figsize(1)*.75 figsize(2)*.025];
+
+if num_z>1
+    z = uicontrol('Style', 'slider',...
+            'Min',1,'Max',num_z,'Value',1,...
+            'Position', zsliderpos,...
+            'SliderStep', [1, 1] / (num_z - 1),...
+            'Callback', {@getsliderpos,pts});
+else
+    z.Value=1;
+end
+
+
+
+
+psliderpos=[figsize(1)*.2 figsize(2)*.1 figsize(1)*.75 figsize(2)*.025];
+
+if num_p>1
+    p = uicontrol('Style', 'slider',...
+            'Min',1,'Max',num_p,'Value',1,...
+            'Position', psliderpos,...
+            'SliderStep', [1, 1] / (num_p - 1),...
+            'Callback', {@getppos,pts});
+else
+        p.Value=1;
+end
+    
+kpairbuttonpos=[figsize(1)*.05 figsize(2)*.9 figsize(1)*.1 figsize(2)*.025];
+   
+kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
+        'Position', kpairbuttonpos,...
+        'Callback', {@setptstopairs,pts});       
+
+    %sets the callback function on the image to be "MarkKPairs"
+   
+    function ppos=getppos(source,event,pts)
+        val=round(source.Value);
+        h=findobj(gca,'Type','hggroup');
+        delete(h);
+        img.CData=getMulticolorImageforUI(megastack(:,:,1:num_c,z.Value,val),num_c);
+        ppos=val;
+        if isstruct(pts) == 1
+            if pts(val).num_kin ~= 0
+                K1check=find(pts(val).K1coord(:,3)==z.Value);
+                K2check=find(pts(val).K2coord(:,3)==z.Value);
+                if isempty(K1check) == 0
+                    h=viscircles(pts(val).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
+                    h.Children(1).Color=cyan;
+                end
+                if isempty(K2check) == 0
+                    h=viscircles(pts(val).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                    h.Children(1).Color=orange;
+                end
+            end
+        end
+        %Redraws circles if they have been tracked using the Kpair tracker
+    end
+
+%function that changes the stage position using the slider while maintaining the
+%z position
+
+    function zpos=getsliderpos(source,event,pts)
+        val=round(source.Value);
+        h=findobj(gca,'Type','hggroup');
+        delete(h);
+        img.CData=getMulticolorImageforUI(megastack(:,:,1:num_c,val,p.Value),num_c);
+        zpos=val;
+        if isstruct(pts) == 1
+            if pts(p.Value).num_kin ~= 0
+                K1check=find(pts(p.Value).K1coord(:,3)==val);
+                K2check=find(pts(p.Value).K2coord(:,3)==val);
+                if isempty(K1check) == 0
+                    h=viscircles(pts(p.Value).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
+                    h.Children(1).Color=cyan;
+                end
+                if isempty(K2check) == 0
+                    h=viscircles(pts(p.Value).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                    h.Children(1).Color=orange;
+                end
+            end
+        end
+        %Redraws circles if they have been tracked using the Kpair tracker
+    end
+
+%function that changes the zposition using the slider while maintaining the
+%stage position
+
+    function pts=setptstopairs(source, event,pts)
+       msgbox('You turned on The kinetochore pair marking option. Please click on a kinetochore, and then on the sister. Please do not press this button again until you press the "Pairs Done" button.')
+       
+       for i=1:num_p
+            s(i).num_kin=0;
+            s(i).K1coord=[];
+            s(i).K2coord=[];
+            
+
+       end
+       pts=s;
+       img.ButtonDownFcn={@MarkKPairs,pts};
+    end
+
+%function that sets callback function on the image to be "MarkKPairs" and builds the struct "pts" that will hold all the data.
+
+    function pts=MarkKPairs(source, eventdata,pts)
+        AX=source.Parent;
+        coord = get(AX, 'CurrentPoint');
+        coord = [coord(1,1) coord(1,2) z.Value];
+        stgpos=p.Value;
+        slcpos=z.Value;
+        pts(stgpos).num_kin=pts(stgpos).num_kin+1;
+        
+        if rem(pts(stgpos).num_kin,2)==1
+            pts(stgpos).K1coord = [pts(stgpos).K1coord; coord];
+            h=viscircles(coord(1:2),4,'LineWidth',0.25);
+            h.Children(1).Color=cyan;
+            
+        else
+            pts(stgpos).K2coord = [pts(stgpos).K2coord; coord];
+            h=viscircles(coord(1:2),4,'LineWidth',0.25);
+            h.Children(1).Color=orange;
+            
+        end
+        img.ButtonDownFcn={@MarkKPairs,pts};
+        if num_z>1
+            z = uicontrol('Style', 'slider',...
+                'Min',1,'Max',num_z,'Value',z.Value,...
+                'Position', zsliderpos,...
+                'SliderStep', [1, 1] / (num_z - 1),...
+                'Callback', {@getsliderpos,pts});
+        end
+        if num_p>1
+            p = uicontrol('Style', 'slider',...
+            'Min',1,'Max',num_p,'Value',p.Value,...
+            'Position', psliderpos,...
+            'SliderStep', [1, 1] / (num_p - 1),...
+            'Callback', {@getppos,pts});
+        end
+        %Recalls all of the sliders to update the pts struct within them
+    end
+
+if num_z>1
+    ztextpos=[figsize(1)*.15 figsize(2)*.05 figsize(1)*.025 figsize(2)*.025];
+    ztxt = uicontrol('Style','text',...
+        'Position',ztextpos,...
+        'String','z');
+end
+if num_p>1    
+    ptextpos=[figsize(1)*.15 figsize(2)*.1 figsize(1)*.025 figsize(2)*.025];
+    ptxt = uicontrol('Style','text',...
+            'Position',ptextpos,...
+            'String','p');
+end    
+
+
+end
+    
+    
+% % % % % % % max_r=max(max(img.CData(:,:,1)));
+% % % % % % % rsliderpos=[figsize(1)*.1 figsize(2)*.05 figsize(1)*.09 figsize(2)*.025];
+% % % % % % % r = uicontrol('Style', 'slider',...
+% % % % % % %         'Min',0,'Max',max_r,'Value',1,...
+% % % % % % %         'Position', rsliderpos,...
+% % % % % % %         'SliderStep', [.01, .01] / (max_r - 0),...
+% % % % % % %         'Callback', @getRpos);
+% % % % % % %     
+% % % % % % %     function rlevel=getsliderpos(source,event)
+% % % % % % %     val=round(source.Value);
+% % % % % % %     img.CData=getMulticolorImageforUI(megastack(:,:,1:num_c,val,ppos),num_c);
+% % % % % % %     zpos=val;
+% % % % % % %     end
+% % % % % % % 
