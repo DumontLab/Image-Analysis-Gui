@@ -17,14 +17,28 @@ metadata=nd_file{1,4};
 xdim = metadata.getPixelsSizeX(0).getValue(); % image width, pixels
 ydim = metadata.getPixelsSizeY(0).getValue(); % image height, pixels
 num_z = metadata.getPixelsSizeZ(0).getValue(); % number of Z slices
-num_c = metadata.getPixelsSizeC(0).getValue(); % number of wavelengths
-num_t = metadata.getPixelsSizeT(0).getValue(); % number of timepoints
-num_p = metadata.getImageCount(); %number of stage positions
-
+num_c = metadata.getPixelsSizeC(0).getValue(); % number of Z slices
 %%%Pulls metadata from OME format. useful because it does not change
 %%%between file formats and acquisition programs
 
-
+if strcmp(metadata.get('Global DoStage'),'TRUE')==1
+    num_p=metadata.get('Global NStagePositions');
+    num_p=str2num(num_p);
+else
+    num_p=1;
+end
+if strcmp(metadata.get('Global DoZSeries'),'TRUE')==1
+    num_z=metadata.get('Global NZSteps');
+    num_z=str2num(num_z);
+else
+    num_z=1;
+end
+if strcmp(metadata.get('Global DoWave'),'TRUE')==1
+    num_c=metadata.get('Global NWavelengths');
+    num_c=str2num(num_c);
+else
+    num_c=1;
+end
 
 
 dimensions=[num_c num_z num_p];
