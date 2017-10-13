@@ -18,6 +18,7 @@ xdim = metadata.getPixelsSizeX(0).getValue(); % image width, pixels
 ydim = metadata.getPixelsSizeY(0).getValue(); % image height, pixels
 num_z = metadata.getPixelsSizeZ(0).getValue(); % number of Z slices
 num_c = metadata.getPixelsSizeC(0).getValue(); % number of Z slices
+
 %%%Pulls metadata from OME format. useful because it does not change
 %%%between file formats and acquisition programs
 
