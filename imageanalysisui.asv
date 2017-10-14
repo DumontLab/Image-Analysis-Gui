@@ -6,6 +6,7 @@ screendim=get(0,'screensize');
 figsize=[screendim(3)*0.8 screendim(4)*0.8];
 screenpos=[screendim(3)*0.1 screendim(4)*0.1];
 pts=0;
+pix_size=0.105;
 figure
 set(gcf,'Position',[screenpos figsize])
 cyan = [0.152941176470588 0.658823529411765 0.878431372549020];
@@ -17,29 +18,14 @@ metadata=nd_file{1,4};
 xdim = metadata.getPixelsSizeX(0).getValue(); % image width, pixels
 ydim = metadata.getPixelsSizeY(0).getValue(); % image height, pixels
 num_z = metadata.getPixelsSizeZ(0).getValue(); % number of Z slices
-num_c = metadata.getPixelsSizeC(0).getValue(); % number of Z slices
+num_c = metadata.getPixelsSizeC(0).getValue(); % number of wavelengths
+num_t = metadata.getPixelsSizeT(0).getValue(); % number of timepoints
+num_p = metadata.getImageCount(); %number of stage positions
 
 %%%Pulls metadata from OME format. useful because it does not change
 %%%between file formats and acquisition programs
 
-if strcmp(metadata.get('Global DoStage'),'TRUE')==1
-    num_p=metadata.get('Global NStagePositions');
-    num_p=str2num(num_p);
-else
-    num_p=1;
-end
-if strcmp(metadata.get('Global DoZSeries'),'TRUE')==1
-    num_z=metadata.get('Global NZSteps');
-    num_z=str2num(num_z);
-else
-    num_z=1;
-end
-if strcmp(metadata.get('Global DoWave'),'TRUE')==1
-    num_c=metadata.get('Global NWavelengths');
-    num_c=str2num(num_c);
-else
-    num_c=1;
-end
+
 
 
 dimensions=[num_c num_z num_p];
@@ -125,6 +111,15 @@ kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
         'Callback', {@setptstopairs,pts});       
 
     %sets the callback function on the image to be "MarkKPairs"
+    
+savepairbuttonpos=[figsize(1)*.05 figsize(2)*.85 figsize(1)*.1 figsize(2)*.025];
+   
+savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
+        'Position',savepairbuttonpos,...
+        'Callback', {@savepairs,pts,pix_size});       
+
+    %sets the callback function on the image to be "MarkKPairs"
+   
    
     function ppos=getppos(source,event,pts)
         val=round(source.Value);
@@ -179,7 +174,7 @@ kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
 %stage position
 
     function pts=setptstopairs(source, event,pts)
-       msgbox('You turned on The kinetochore pair marking option. Please click on a kinetochore, and then on the sister. Please do not press this button again until you press the "Pairs Done" button.')
+       msgbox('You turned on The object pair marking option. Please click on an object, and then its complement (eg. a kinetochore and its sister). Please do not press this button again until you press the "Pairs Done" button.')
        
        for i=1:num_p
             s(i).num_kin=0;
@@ -194,7 +189,7 @@ kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
 
 %function that sets callback function on the image to be "MarkKPairs" and builds the struct "pts" that will hold all the data.
 
-    function pts=MarkKPairs(source, eventdata,pts)
+    function pts=MarkKPairs(source, eventdata,pts,pixsize)
         AX=source.Parent;
         coord = get(AX, 'CurrentPoint');
         coord = [coord(1,1) coord(1,2) z.Value];
@@ -228,8 +223,18 @@ kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
             'SliderStep', [1, 1] / (num_p - 1),...
             'Callback', {@getppos,pts});
         end
+        
         %Recalls all of the sliders to update the pts struct within them
+        
+        savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
+        'Position',savepairbuttonpos,...
+        'Callback', {@savepairs,pts,pix_size});  
+    %updates the save function to save the newest data
+        
     end
+
+    function [pix_size]=savepairs(source, event, pts, pix_size)
+        pix_size = WritePairDataToFile_ImAlGui( pts, pix_size );
 
 if num_z>1
     ztextpos=[figsize(1)*.15 figsize(2)*.05 figsize(1)*.025 figsize(2)*.025];

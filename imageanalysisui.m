@@ -6,6 +6,7 @@ screendim=get(0,'screensize');
 figsize=[screendim(3)*0.8 screendim(4)*0.8];
 screenpos=[screendim(3)*0.1 screendim(4)*0.1];
 pts=0;
+pix_size=0.105;
 figure
 set(gcf,'Position',[screenpos figsize])
 cyan = [0.152941176470588 0.658823529411765 0.878431372549020];
@@ -107,9 +108,18 @@ kpairbuttonpos=[figsize(1)*.05 figsize(2)*.9 figsize(1)*.1 figsize(2)*.025];
    
 kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
         'Position', kpairbuttonpos,...
-        'Callback', {@setptstopairs,pts});       
+        'Callback', {@setptstopairs,pts,pix_size});       
 
     %sets the callback function on the image to be "MarkKPairs"
+    
+savepairbuttonpos=[figsize(1)*.05 figsize(2)*.85 figsize(1)*.1 figsize(2)*.025];
+   
+savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
+        'Position',savepairbuttonpos,...
+        'Callback', {@savepairs,pts,pix_size});       
+
+    %sets the callback function on the image to be "MarkKPairs"
+   
    
     function ppos=getppos(source,event,pts)
         val=round(source.Value);
@@ -163,8 +173,8 @@ kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
 %function that changes the zposition using the slider while maintaining the
 %stage position
 
-    function pts=setptstopairs(source, event,pts)
-       msgbox('You turned on The kinetochore pair marking option. Please click on a kinetochore, and then on the sister. Please do not press this button again until you press the "Pairs Done" button.')
+    function pts=setptstopairs(source, event,pts, pix_size)
+       msgbox('You turned on The object pair marking option. Please click on an object, and then its complement (eg. a kinetochore and its sister). Please do not press this button again until you press the "Pairs Done" button.')
        
        for i=1:num_p
             s(i).num_kin=0;
@@ -174,12 +184,12 @@ kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
 
        end
        pts=s;
-       img.ButtonDownFcn={@MarkKPairs,pts};
+       img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
     end
 
 %function that sets callback function on the image to be "MarkKPairs" and builds the struct "pts" that will hold all the data.
 
-    function pts=MarkKPairs(source, eventdata,pts)
+    function pts=MarkKPairs(source, eventdata,pts,pixsize)
         AX=source.Parent;
         coord = get(AX, 'CurrentPoint');
         coord = [coord(1,1) coord(1,2) z.Value];
@@ -213,7 +223,22 @@ kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
             'SliderStep', [1, 1] / (num_p - 1),...
             'Callback', {@getppos,pts});
         end
+        
         %Recalls all of the sliders to update the pts struct within them
+        
+        savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
+        'Position',savepairbuttonpos,...
+        'Callback', {@savepairs,pts,pix_size});  
+    %updates the save function to save the newest data
+        
+    end
+
+    function [pix_size]=savepairs(source, event, pts, pix_size)
+        pix_size = WritePairDataToFile_ImAlGui( pts, pix_size );
+        img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
+        savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
+        'Position',savepairbuttonpos,...
+        'Callback', {@savepairs,pts,pix_size}); 
     end
 
 if num_z>1

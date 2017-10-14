@@ -5,7 +5,7 @@ data=varargin{1};
 %pulls out struct tracking data
 
 if length(varargin)>1
-    default_pix_size=varargin{2};
+    default_pix_size={num2str(varargin{2})};
 else
     default_pix_size={'0.105'};
 end
@@ -66,6 +66,8 @@ celldata{1,9}=num_p;
 sheetdata=[data_key; celldata];
 
 cd(pathname)
+
+pix_size=str2num(pix_size{1});
 
 xlswrite(filename,sheetdata);
 
