@@ -108,7 +108,7 @@ kpairbuttonpos=[figsize(1)*.05 figsize(2)*.9 figsize(1)*.1 figsize(2)*.025];
    
 kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
         'Position', kpairbuttonpos,...
-        'Callback', {@setptstopairs,pts});       
+        'Callback', {@setptstopairs,pts,pix_size});       
 
     %sets the callback function on the image to be "MarkKPairs"
     
@@ -118,7 +118,14 @@ savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
         'Position',savepairbuttonpos,...
         'Callback', {@savepairs,pts,pix_size});       
 
-    %sets the callback function on the image to be "MarkKPairs"
+    %installs the button used to save pair data
+    
+openpairbuttonpos=[figsize(1)*.05 figsize(2)*.8 figsize(1)*.1 figsize(2)*.025];
+   
+openpair = uicontrol('Style', 'pushbutton', 'String', 'Open pair data',...
+        'Position',savepairbuttonpos,...
+        'Callback', {@openpairs});
+    %intalls the button to open pair data
    
    
     function ppos=getppos(source,event,pts)
@@ -173,7 +180,7 @@ savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
 %function that changes the zposition using the slider while maintaining the
 %stage position
 
-    function pts=setptstopairs(source, event,pts)
+    function pts=setptstopairs(source, event,pts, pix_size)
        msgbox('You turned on The object pair marking option. Please click on an object, and then its complement (eg. a kinetochore and its sister). Please do not press this button again until you press the "Pairs Done" button.')
        
        for i=1:num_p
@@ -184,7 +191,7 @@ savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
 
        end
        pts=s;
-       img.ButtonDownFcn={@MarkKPairs,pts};
+       img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
     end
 
 %function that sets callback function on the image to be "MarkKPairs" and builds the struct "pts" that will hold all the data.
@@ -235,6 +242,21 @@ savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
 
     function [pix_size]=savepairs(source, event, pts, pix_size)
         pix_size = WritePairDataToFile_ImAlGui( pts, pix_size );
+        img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
+        savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
+        'Position',savepairbuttonpos,...
+        'Callback', {@savepairs,pts,pix_size}); 
+    end
+
+    function [pts]=openpairs(source,event);
+        check=questdlg('Proceeding will clear the currently tracked data on the UI. Continue?','Save data?','Yes','No','Yes');
+        %makes sure you don't accidentally erase your progess on the figure
+        if strcmp(check,'Yes')==1
+            [ pts, data_matrix, column_labels ] = ReadPairDataFromFile_ImAlGui;
+            %reads data from file. Might use the other inputs in a later
+            %build.
+            
+            
 
 if num_z>1
     ztextpos=[figsize(1)*.15 figsize(2)*.05 figsize(1)*.025 figsize(2)*.025];
