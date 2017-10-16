@@ -2,17 +2,28 @@ function imageanalysisui(nd_file)
 %%%accepts an input of a bfopen file and opens a gui to quantify various
 %%%aspects
 close all
+figure
 screendim=get(0,'screensize');
 figsize=[screendim(3)*0.8 screendim(4)*0.8];
 screenpos=[screendim(3)*0.1 screendim(4)*0.1];
+set(gcf,'Position',[screenpos figsize])
+
+
+%%%sets position and size of figure adjusted to monitor settings
+
 pts=0;
 pix_size=0.105;
-figure
-set(gcf,'Position',[screenpos figsize])
+r_scaler = 1;
+g_scaler = 1;
+b_scaler = 1;
 cyan = [0.152941176470588 0.658823529411765 0.878431372549020];
 orange =  [0.956862745098039,0.498039215686275,0.215686274509804];
 
-%%%sets position and size of figure adjusted to monitor settings
+%Set default values for a number of properties to be plugged in functions
+%later on in the code, including the tracking struct pts, the pixel size,
+%the brightness scaling factor, and the colors of circles to draw
+
+
 
 metadata=nd_file{1,4};
 xdim = metadata.getPixelsSizeX(0).getValue(); % image width, pixels
@@ -84,7 +95,7 @@ if num_z>1
         'Min',1,'Max',num_z,'Value',1,...
         'Position', zsliderpos,...
         'SliderStep', [1, 1] / (num_z - 1),...
-        'Callback', {@getsliderpos,pts});
+        'Callback', {@getsliderpos,pts,r_scaler});
 else
     z.Value=1;
 end
@@ -104,7 +115,7 @@ else
     p.Value=1;
 end
 
-kpairbuttonpos=[figsize(1)*.05 figsize(2)*.9 figsize(1)*.1 figsize(2)*.025];
+kpairbuttonpos=[figsize(1)*.02 figsize(2)*.9 figsize(1)*.10 figsize(2)*.025];
 
 kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
     'Position', kpairbuttonpos,...
@@ -112,7 +123,7 @@ kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
 
 %sets the callback function on the image to be "MarkKPairs"
 
-savepairbuttonpos=[figsize(1)*.05 figsize(2)*.85 figsize(1)*.1 figsize(2)*.025];
+savepairbuttonpos=[figsize(1)*.02 figsize(2)*.85 figsize(1)*.1 figsize(2)*.025];
 
 savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
     'Position',savepairbuttonpos,...
@@ -120,19 +131,50 @@ savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
 
 %installs the button used to save pair data
 
-openpairbuttonpos=[figsize(1)*.05 figsize(2)*.8 figsize(1)*.1 figsize(2)*.025];
+openpairbuttonpos=[figsize(1)*.02 figsize(2)*.8 figsize(1)*.1 figsize(2)*.025];
 
 openpair = uicontrol('Style', 'pushbutton', 'String', 'Open pair data',...
     'Position',openpairbuttonpos,...
     'Callback', {@openpairs,pix_size});
 %intalls the button to open pair data
 
-deletepairtrackbuttonpos=[figsize(1)*.05 figsize(2)*.75 figsize(1)*.1 figsize(2)*.025];
+deletepairtrackbuttonpos=[figsize(1)*.02 figsize(2)*.75 figsize(1)*.1 figsize(2)*.025];
 
 deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
     'Position',deletepairtrackbuttonpos,...
     'Callback', {@delpairtrack,pts,pix_size});
-%intalls the button to open pair data
+%intalls the button to delete the last tracked mark
+
+max_r=255;
+
+rsliderpos=[figsize(1)*.02 figsize(2)*.17 figsize(1)*.12 figsize(2)*.025];
+
+r = uicontrol('Style', 'slider',...
+        'Min',0,'Max',max_r,'Value',255,...
+        'Position', rsliderpos,...
+        'SliderStep', [1 1] / (255 - 0),...
+        'Callback', {@getRpos,pts,r_scaler,pix_size});
+
+    max_g=255;
+    
+    gsliderpos=[figsize(1)*.02 figsize(2)*.11 figsize(1)*.12 figsize(2)*.025];
+
+g = uicontrol('Style', 'slider',...
+        'Min',0,'Max',max_g,'Value',255,...
+        'Position', gsliderpos,...
+        'SliderStep', [1 1] / (255 - 0),...
+        'Callback', @getGpos);
+    
+    
+    max_b=255;
+    
+    bsliderpos=[figsize(1)*.02 figsize(2)*.05 figsize(1)*.12 figsize(2)*.025];
+
+b = uicontrol('Style', 'slider',...
+        'Min',0,'Max',max_b,'Value',255,...
+        'Position', bsliderpos,...
+        'SliderStep', [1 1] / (255 - 0),...
+        'Callback', @getBpos);
 
 
     function ppos=getppos(source,event,pts)
@@ -161,11 +203,14 @@ deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point'
 %function that changes the stage position using the slider while maintaining the
 %z position
 
-    function zpos=getsliderpos(source,event,pts)
+    function zpos=getsliderpos(source,event,pts,r_scaler)
         val=round(source.Value);
         h=findobj(gca,'Type','hggroup');
         delete(h);
-        img.CData=getMulticolorImageforUI(megastack(:,:,1:num_c,val,p.Value),num_c);
+        multicolorimage = (megastack(:,:,1:num_c,val,p.Value));
+        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
+        
+        img.CData=getMulticolorImageforUI(multicolorimage , num_c);
         zpos=val;
         if isstruct(pts) == 1
             if pts(p.Value).num_kin ~= 0
@@ -400,6 +445,30 @@ deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point'
         end
     end
 
+    function [r_scaler] = getRpos(source, events, pts, r_scaler, pix_size)
+        val=(source.Value);
+        
+        r_scaler = val / 255;
+        
+        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value));
+        
+        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
+        
+        img.CData=getMulticolorImageforUI(multicolorimage, num_c);
+        
+        if num_z>1
+    z = uicontrol('Style', 'slider',...
+        'Min',1,'Max',num_z,'Value',z.Value,...
+        'Position', zsliderpos,...
+        'SliderStep', [1, 1] / (num_z - 1),...
+        'Callback', {@getsliderpos,pts,r_scaler});
+        end
+        
+        
+        
+    end
+        
+
 
 
 
@@ -417,17 +486,43 @@ if num_p>1
         'String','p');
 end
 
-
+if num_c>1
+    rtextpos=[figsize(1)*.07 figsize(2)*.2 figsize(1)*.025 figsize(2)*.025];
+    rtxt = uicontrol('Style','text',...
+        'Position',rtextpos,...
+        'String','r');
 end
 
+if num_c>1
+    gtextpos=[figsize(1)*.07 figsize(2)*.14 figsize(1)*.025 figsize(2)*.025];
+    gtxt = uicontrol('Style','text',...
+        'Position',gtextpos,...
+        'String','g');
+end
 
-% % % % % % % max_r=max(max(img.CData(:,:,1)));
-% % % % % % % rsliderpos=[figsize(1)*.1 figsize(2)*.05 figsize(1)*.09 figsize(2)*.025];
-% % % % % % % r = uicontrol('Style', 'slider',...
-% % % % % % %         'Min',0,'Max',max_r,'Value',1,...
-% % % % % % %         'Position', rsliderpos,...
-% % % % % % %         'SliderStep', [.01, .01] / (max_r - 0),...
-% % % % % % %         'Callback', @getRpos);
+if num_c>2
+    btextpos=[figsize(1)*.07 figsize(2)*.08 figsize(1)*.025 figsize(2)*.025];
+    rtxt = uicontrol('Style','text',...
+        'Position',btextpos,...
+        'String','b');
+end
+
+    end
+
+    function [scaled]=scaleimage(raw,scalefactor)
+    
+        max_int = max( raw( : ) );
+        
+        scaler = max_int * scalefactor;
+        
+        scaled = raw;
+        
+        scaled( scaled > scaler) = scaler;
+       
+        
+    end
+
+
 % % % % % % %
 % % % % % % %     function rlevel=getsliderpos(source,event)
 % % % % % % %     val=round(source.Value);
