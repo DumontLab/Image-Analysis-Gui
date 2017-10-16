@@ -35,7 +35,7 @@ pixeldim=[ydim xdim];
 alldim=[pixeldim dimensions];
 
 megastack=zeros(alldim);
- 
+
 
 for i=1:num_p
     if num_c < 4
@@ -81,10 +81,10 @@ zsliderpos=[figsize(1)*.2 figsize(2)*.05 figsize(1)*.75 figsize(2)*.025];
 
 if num_z>1
     z = uicontrol('Style', 'slider',...
-            'Min',1,'Max',num_z,'Value',1,...
-            'Position', zsliderpos,...
-            'SliderStep', [1, 1] / (num_z - 1),...
-            'Callback', {@getsliderpos,pts});
+        'Min',1,'Max',num_z,'Value',1,...
+        'Position', zsliderpos,...
+        'SliderStep', [1, 1] / (num_z - 1),...
+        'Callback', {@getsliderpos,pts});
 else
     z.Value=1;
 end
@@ -96,38 +96,45 @@ psliderpos=[figsize(1)*.2 figsize(2)*.1 figsize(1)*.75 figsize(2)*.025];
 
 if num_p>1
     p = uicontrol('Style', 'slider',...
-            'Min',1,'Max',num_p,'Value',1,...
-            'Position', psliderpos,...
-            'SliderStep', [1, 1] / (num_p - 1),...
-            'Callback', {@getppos,pts});
+        'Min',1,'Max',num_p,'Value',1,...
+        'Position', psliderpos,...
+        'SliderStep', [1, 1] / (num_p - 1),...
+        'Callback', {@getppos,pts});
 else
-        p.Value=1;
+    p.Value=1;
 end
-    
+
 kpairbuttonpos=[figsize(1)*.05 figsize(2)*.9 figsize(1)*.1 figsize(2)*.025];
-   
+
 kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
-        'Position', kpairbuttonpos,...
-        'Callback', {@setptstopairs,pts,pix_size});       
+    'Position', kpairbuttonpos,...
+    'Callback', {@setptstopairs,pts,pix_size});
 
-    %sets the callback function on the image to be "MarkKPairs"
-    
+%sets the callback function on the image to be "MarkKPairs"
+
 savepairbuttonpos=[figsize(1)*.05 figsize(2)*.85 figsize(1)*.1 figsize(2)*.025];
-   
-savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
-        'Position',savepairbuttonpos,...
-        'Callback', {@savepairs,pts,pix_size});       
 
-    %installs the button used to save pair data
-    
+savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
+    'Position',savepairbuttonpos,...
+    'Callback', {@savepairs,pts,pix_size});
+
+%installs the button used to save pair data
+
 openpairbuttonpos=[figsize(1)*.05 figsize(2)*.8 figsize(1)*.1 figsize(2)*.025];
-   
+
 openpair = uicontrol('Style', 'pushbutton', 'String', 'Open pair data',...
-        'Position',savepairbuttonpos,...
-        'Callback', {@openpairs});
-    %intalls the button to open pair data
-   
-   
+    'Position',openpairbuttonpos,...
+    'Callback', {@openpairs,pix_size});
+%intalls the button to open pair data
+
+deletepairtrackbuttonpos=[figsize(1)*.05 figsize(2)*.75 figsize(1)*.1 figsize(2)*.025];
+
+deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
+    'Position',deletepairtrackbuttonpos,...
+    'Callback', {@delpairtrack,pts,pix_size});
+%intalls the button to open pair data
+
+
     function ppos=getppos(source,event,pts)
         val=round(source.Value);
         h=findobj(gca,'Type','hggroup');
@@ -181,22 +188,25 @@ openpair = uicontrol('Style', 'pushbutton', 'String', 'Open pair data',...
 %stage position
 
     function pts=setptstopairs(source, event,pts, pix_size)
-       msgbox('You turned on The object pair marking option. Please click on an object, and then its complement (eg. a kinetochore and its sister). Please do not press this button again until you press the "Pairs Done" button.')
-       
-       for i=1:num_p
+        msgbox('You turned on The object pair marking option. Please click on an object, and then its complement (eg. a kinetochore and its sister). Please do not press this button again until you press the "Pairs Done" button.')
+        
+        for i=1:num_p
             s(i).num_kin=0;
             s(i).K1coord=[];
             s(i).K2coord=[];
             
-
-       end
-       pts=s;
-       img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
+            
+        end
+        pts=s;
+        img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
+        deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
+            'Position',deletepairtrackbuttonpos,...
+            'Callback', {@delpairtrack,pts,pix_size});
     end
 
 %function that sets callback function on the image to be "MarkKPairs" and builds the struct "pts" that will hold all the data.
 
-    function pts=MarkKPairs(source, eventdata,pts,pixsize)
+    function pts=MarkKPairs(source, eventdata, pts, pixsize)
         AX=source.Parent;
         coord = get(AX, 'CurrentPoint');
         coord = [coord(1,1) coord(1,2) z.Value];
@@ -225,18 +235,22 @@ openpair = uicontrol('Style', 'pushbutton', 'String', 'Open pair data',...
         end
         if num_p>1
             p = uicontrol('Style', 'slider',...
-            'Min',1,'Max',num_p,'Value',p.Value,...
-            'Position', psliderpos,...
-            'SliderStep', [1, 1] / (num_p - 1),...
-            'Callback', {@getppos,pts});
+                'Min',1,'Max',num_p,'Value',p.Value,...
+                'Position', psliderpos,...
+                'SliderStep', [1, 1] / (num_p - 1),...
+                'Callback', {@getppos,pts});
         end
         
         %Recalls all of the sliders to update the pts struct within them
         
         savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
-        'Position',savepairbuttonpos,...
-        'Callback', {@savepairs,pts,pix_size});  
-    %updates the save function to save the newest data
+            'Position',savepairbuttonpos,...
+            'Callback', {@savepairs,pts,pix_size});
+        %updates the save function to save the newest data
+        
+        deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
+            'Position',deletepairtrackbuttonpos,...
+            'Callback', {@delpairtrack,pts,pix_size});
         
     end
 
@@ -244,19 +258,137 @@ openpair = uicontrol('Style', 'pushbutton', 'String', 'Open pair data',...
         pix_size = WritePairDataToFile_ImAlGui( pts, pix_size );
         img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
         savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
-        'Position',savepairbuttonpos,...
-        'Callback', {@savepairs,pts,pix_size}); 
+            'Position',savepairbuttonpos,...
+            'Callback', {@savepairs,pts,pix_size});
     end
 
-    function [pts]=openpairs(source,event);
+    function [pts]=openpairs(source,event,pix_size);
         check=questdlg('Proceeding will clear the currently tracked data on the UI. Continue?','Save data?','Yes','No','Yes');
         %makes sure you don't accidentally erase your progess on the figure
         if strcmp(check,'Yes')==1
             [ pts, data_matrix, column_labels ] = ReadPairDataFromFile_ImAlGui;
             %reads data from file. Might use the other inputs in a later
             %build.
+            img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
+            savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
+                'Position',savepairbuttonpos,...
+                'Callback', {@savepairs,pts,pix_size});
+            if num_z>1
+                z = uicontrol('Style', 'slider',...
+                    'Min',1,'Max',num_z,'Value',z.Value,...
+                    'Position', zsliderpos,...
+                    'SliderStep', [1, 1] / (num_z - 1),...
+                    'Callback', {@getsliderpos,pts});
+            end
+            if num_p>1
+                p = uicontrol('Style', 'slider',...
+                    'Min',1,'Max',num_p,'Value',p.Value,...
+                    'Position', psliderpos,...
+                    'SliderStep', [1, 1] / (num_p - 1),...
+                    'Callback', {@getppos,pts});
+            end
+            deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
+                'Position',deletepairtrackbuttonpos,...
+                'Callback', {@delpairtrack,pts,pix_size});
+            if num_p > 1
+                stgpos = p.Value;
+            else
+                stgpos=1;
+            end
+            
+            if num_z > 1
+                slcpos = z.Value;
+            else
+                slcpos = 1;
+            end
             
             
+            
+        end
+    end
+
+    function [pts]=delpairtrack(source, event, pts, pix_size)
+        if isstruct(pts) ==1
+            if num_p > 1
+                stgpos = p.Value;
+            else
+                stgpos=1;
+            end
+            
+            if num_z > 1
+                slcpos = z.Value;
+            else
+                slcpos = 1;
+            end
+            
+            if pts(stgpos).num_kin > 0
+                
+                
+                if rem(pts(stgpos).num_kin, 2)== 1
+                    pts(stgpos).K1coord(size(pts(stgpos).K1coord, 1),:) = [];
+                else
+                    pts(stgpos).K2coord(size(pts(stgpos).K1coord, 1), :) = [];
+                end
+                %Delete the coordinate
+                pts( stgpos ). num_kin = pts( stgpos ).num_kin - 1;
+                %Brings the count down
+                h=findobj( gca, 'Type', 'hggroup' );
+                delete( h );
+                
+                K1check=find( pts( stgpos ).K1coord( :, 3 ) == slcpos);
+                K2check=find( pts( stgpos ).K2coord( :, 3 ) == slcpos);
+                
+                if isempty( K1check ) == 0
+                    h=viscircles(pts(p.Value).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
+                    h.Children(1).Color=cyan;
+                end
+                
+                if isempty( K2check ) == 0
+                    h=viscircles(pts(p.Value).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                    h.Children(1).Color=orange;
+                end
+                
+                if num_z>1
+                    z = uicontrol('Style', 'slider',...
+                        'Min',1,'Max',num_z,'Value',z.Value,...
+                        'Position', zsliderpos,...
+                        'SliderStep', [1, 1] / (num_z - 1),...
+                        'Callback', {@getsliderpos,pts});
+                end
+                if num_p>1
+                    p = uicontrol('Style', 'slider',...
+                        'Min',1,'Max',num_p,'Value',p.Value,...
+                        'Position', psliderpos,...
+                        'SliderStep', [1, 1] / (num_p - 1),...
+                        'Callback', {@getppos,pts});
+                end
+                
+                savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
+                    'Position',savepairbuttonpos,...
+                    'Callback', {@savepairs,pts,pix_size});
+                
+                openpair = uicontrol('Style', 'pushbutton', 'String', 'Open pair data',...
+                    'Position',openpairbuttonpos,...
+                    'Callback', {@openpairs,pix_size});
+                
+                img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
+                
+                deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
+                    'Position',deletepairtrackbuttonpos,...
+                    'Callback', {@delpairtrack,pts,pix_size});
+                
+                
+                %removes the all the circles
+                
+            else
+                msgbox( 'No tracks to delete!' )
+            end
+        end
+    end
+
+
+
+
 
 if num_z>1
     ztextpos=[figsize(1)*.15 figsize(2)*.05 figsize(1)*.025 figsize(2)*.025];
@@ -264,17 +396,17 @@ if num_z>1
         'Position',ztextpos,...
         'String','z');
 end
-if num_p>1    
+if num_p>1
     ptextpos=[figsize(1)*.15 figsize(2)*.1 figsize(1)*.025 figsize(2)*.025];
     ptxt = uicontrol('Style','text',...
-            'Position',ptextpos,...
-            'String','p');
-end    
+        'Position',ptextpos,...
+        'String','p');
+end
 
 
 end
-    
-    
+
+
 % % % % % % % max_r=max(max(img.CData(:,:,1)));
 % % % % % % % rsliderpos=[figsize(1)*.1 figsize(2)*.05 figsize(1)*.09 figsize(2)*.025];
 % % % % % % % r = uicontrol('Style', 'slider',...
@@ -282,10 +414,10 @@ end
 % % % % % % %         'Position', rsliderpos,...
 % % % % % % %         'SliderStep', [.01, .01] / (max_r - 0),...
 % % % % % % %         'Callback', @getRpos);
-% % % % % % %     
+% % % % % % %
 % % % % % % %     function rlevel=getsliderpos(source,event)
 % % % % % % %     val=round(source.Value);
 % % % % % % %     img.CData=getMulticolorImageforUI(megastack(:,:,1:num_c,val,ppos),num_c);
 % % % % % % %     zpos=val;
 % % % % % % %     end
-% % % % % % % 
+% % % % % % %
