@@ -95,7 +95,7 @@ if num_z>1
         'Min',1,'Max',num_z,'Value',1,...
         'Position', zsliderpos,...
         'SliderStep', [1, 1] / (num_z - 1),...
-        'Callback', {@getsliderpos,pts});
+        'Callback', {@getsliderpos,pts,r_scaler});
 else
     z.Value=1;
 end
@@ -179,6 +179,10 @@ b = uicontrol('Style', 'slider',...
 
     function ppos=getppos(source,event,pts)
         val=round(source.Value);
+        
+         multicolorimage = megastack(:,:,1:num_c,z.Value,val);
+        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
+        
         h=findobj(gca,'Type','hggroup');
         delete(h);
         img.CData=getMulticolorImageforUI(megastack(:,:,1:num_c,z.Value,val),num_c);
@@ -208,9 +212,9 @@ b = uicontrol('Style', 'slider',...
         h=findobj(gca,'Type','hggroup');
         delete(h);
         multicolorimage = (megastack(:,:,1:num_c,val,p.Value));
+        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
-        
-        img.CData=getMulticolorImageforUI(megastack(:,:,1:num_c,val,p.Value),num_c);
+        img.CData=getMulticolorImageforUI(multicolorimage , num_c);
         zpos=val;
         if isstruct(pts) == 1
             if pts(p.Value).num_kin ~= 0
@@ -455,6 +459,14 @@ b = uicontrol('Style', 'slider',...
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
         img.CData=getMulticolorImageforUI(multicolorimage, num_c);
+        
+        if num_z>1
+    z = uicontrol('Style', 'slider',...
+        'Min',1,'Max',num_z,'Value',z.Value,...
+        'Position', zsliderpos,...
+        'SliderStep', [1, 1] / (num_z - 1),...
+        'Callback', {@getsliderpos,pts,r_scaler});
+        end
         
         
         

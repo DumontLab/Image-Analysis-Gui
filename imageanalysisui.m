@@ -95,7 +95,7 @@ if num_z>1
         'Min',1,'Max',num_z,'Value',1,...
         'Position', zsliderpos,...
         'SliderStep', [1, 1] / (num_z - 1),...
-        'Callback', {@getsliderpos,pts,r_scaler});
+        'Callback', {@getsliderpos,pts});
 else
     z.Value=1;
 end
@@ -150,38 +150,61 @@ max_r=255;
 rsliderpos=[figsize(1)*.02 figsize(2)*.17 figsize(1)*.12 figsize(2)*.025];
 
 r = uicontrol('Style', 'slider',...
-        'Min',0,'Max',max_r,'Value',255,...
-        'Position', rsliderpos,...
-        'SliderStep', [1 1] / (255 - 0),...
-        'Callback', {@getRpos,pts,r_scaler,pix_size});
+    'Min',0,'Max',max_r,'Value',255,...
+    'Position', rsliderpos,...
+    'SliderStep', [1 1] / (255 - 0),...
+    'Callback', {@getRpos,pts,r_scaler,pix_size});
 
-    max_g=255;
-    
-    gsliderpos=[figsize(1)*.02 figsize(2)*.11 figsize(1)*.12 figsize(2)*.025];
+max_g=255;
 
+gsliderpos=[figsize(1)*.02 figsize(2)*.11 figsize(1)*.12 figsize(2)*.025];
+
+
+if num_c > 1
 g = uicontrol('Style', 'slider',...
-        'Min',0,'Max',max_g,'Value',255,...
-        'Position', gsliderpos,...
-        'SliderStep', [1 1] / (255 - 0),...
-        'Callback', @getGpos);
-    
-    
-    max_b=255;
-    
-    bsliderpos=[figsize(1)*.02 figsize(2)*.05 figsize(1)*.12 figsize(2)*.025];
+    'Min',0,'Max',max_g,'Value',255,...
+    'Position', gsliderpos,...
+    'SliderStep', [1 1] / (255 - 0),...
+    'Callback', {@getGpos,pts,g_scaler,pix_size});
+else
+    g.Value = 255
+end
+
+
+max_b=255;
+
+bsliderpos=[figsize(1)*.02 figsize(2)*.05 figsize(1)*.12 figsize(2)*.025];
+
+if num_c > 2
 
 b = uicontrol('Style', 'slider',...
-        'Min',0,'Max',max_b,'Value',255,...
-        'Position', bsliderpos,...
-        'SliderStep', [1 1] / (255 - 0),...
-        'Callback', @getBpos);
+    'Min',0,'Max',max_b,'Value',255,...
+    'Position', bsliderpos,...
+    'SliderStep', [1 1] / (255 - 0),...
+    'Callback', {@getBpos,pts,b_scaler,pix_size});
+else
+    b.Value = 255;
+end
 
 
     function ppos=getppos(source,event,pts)
         val=round(source.Value);
+        
+        multicolorimage = megastack(:,:,1:num_c,z.Value,val);
+        
+        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
+        
+        if num_c > 1
+        [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g.Value/255);
+        end
+        
+        if num_c > 2
+        [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b.Value/255);
+        end
+        
         h=findobj(gca,'Type','hggroup');
         delete(h);
-        img.CData=getMulticolorImageforUI(megastack(:,:,1:num_c,z.Value,val),num_c);
+        img.CData=getMulticolorImageforUI(multicolorimage,num_c);
         ppos=val;
         if isstruct(pts) == 1
             if pts(val).num_kin ~= 0
@@ -203,12 +226,21 @@ b = uicontrol('Style', 'slider',...
 %function that changes the stage position using the slider while maintaining the
 %z position
 
-    function zpos=getsliderpos(source,event,pts,r_scaler)
+    function zpos=getsliderpos(source,event,pts)
         val=round(source.Value);
         h=findobj(gca,'Type','hggroup');
         delete(h);
         multicolorimage = (megastack(:,:,1:num_c,val,p.Value));
-        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
+        
+        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
+        
+        if num_c > 1
+        [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g.Value/255);
+        end
+        
+        if num_c > 2
+        [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b.Value/255);
+        end
         
         img.CData=getMulticolorImageforUI(multicolorimage , num_c);
         zpos=val;
@@ -450,24 +482,78 @@ b = uicontrol('Style', 'slider',...
         
         r_scaler = val / 255;
         
+        g_scaler = g.Value / 255;
+        
+        b_scaler = b.Value / 255;
+        
         multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
-        img.CData=getMulticolorImageforUI(multicolorimage, num_c);
         
-        if num_z>1
-    z = uicontrol('Style', 'slider',...
-        'Min',1,'Max',num_z,'Value',z.Value,...
-        'Position', zsliderpos,...
-        'SliderStep', [1, 1] / (num_z - 1),...
-        'Callback', {@getsliderpos,pts,r_scaler});
+        if num_c > 1
+        [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g_scaler);
         end
         
+        if num_c > 2
+        [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b_scaler);
+        end
+        
+        img.CData=getMulticolorImageforUI(multicolorimage, num_c);
+        
+
+        
+    end
+
+
+    function [g_scaler] = getGpos(source, events, pts, g_scaler, pix_size)
+        val=(source.Value);
+        
+        g_scaler = val / 255;
+        
+        r_scaler = r.Value / 255;
+        
+        b_scaler = b.Value / 255;
+        
+        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value));
+        
+        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
+        
+        [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g_scaler);
+        
+        if num_c > 2
+        [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b_scaler);
+        end
+        
+        img.CData=getMulticolorImageforUI(multicolorimage, num_c);
+        
+
         
         
     end
+
+    function [b_scaler] = getBpos(source, events, pts, b_scaler, pix_size)
+        val=(source.Value);
         
+        b_scaler = val / 255;
+        
+        r_scaler = r.Value / 255;
+        
+        g_scaler = g.Value / 255;
+        
+        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value));
+        
+        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
+        
+        [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g_scaler);
+        
+        [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b_scaler);
+        
+        img.CData=getMulticolorImageforUI(multicolorimage, num_c);
+        
+
+        
+    end
 
 
 
@@ -491,6 +577,11 @@ if num_c>1
     rtxt = uicontrol('Style','text',...
         'Position',rtextpos,...
         'String','r');
+else
+rtextpos=[figsize(1)*.07 figsize(2)*.2 figsize(1)*.025 figsize(2)*.025];
+    rtxt = uicontrol('Style','text',...
+        'Position',rtextpos,...
+        'String','Brightess/Contrast');
 end
 
 if num_c>1
@@ -507,20 +598,20 @@ if num_c>2
         'String','b');
 end
 
-    end
+end
 
-    function [scaled]=scaleimage(raw,scalefactor)
-    
-        max_int = max( raw( : ) );
-        
-        scaler = max_int * scalefactor;
-        
-        scaled = raw;
-        
-        scaled( scaled > scaler) = scaler;
-       
-        
-    end
+function [scaled]=scaleimage(raw,scalefactor)
+
+max_int = max( raw( : ) );
+
+scaler = max_int * scalefactor;
+
+scaled = raw;
+
+scaled( scaled > scaler) = scaler;
+
+
+end
 
 
 % % % % % % %
