@@ -32,6 +32,8 @@ num_z = metadata.getPixelsSizeZ(0).getValue(); % number of Z slices
 num_c = metadata.getPixelsSizeC(0).getValue(); % number of wavelengths
 num_t = metadata.getPixelsSizeT(0).getValue(); % number of timepoints
 num_p = metadata.getImageCount(); %number of stage positions
+time = gettimestepOME(metadata, num_z, num_p, num_c , num_t); %list of timepoints
+
 
 %%%Pulls metadata from OME format. useful because it does not change
 %%%between file formats and acquisition programs
@@ -287,8 +289,8 @@ end
         AX=source.Parent;
         coord = get(AX, 'CurrentPoint');
         coord = [coord(1,1) coord(1,2) z.Value];
-        stgpos=p.Value;
-        slcpos=z.Value;
+        stgpos=round(p.Value);
+        slcpos=round(z.Value);
         pts(stgpos).num_kin=pts(stgpos).num_kin+1;
         
         if rem(pts(stgpos).num_kin,2)==1
@@ -368,13 +370,13 @@ end
                 'Position',deletepairtrackbuttonpos,...
                 'Callback', {@delpairtrack,pts,pix_size});
             if num_p > 1
-                stgpos = p.Value;
+                stgpos = round(p.Value);
             else
                 stgpos=1;
             end
             
             if num_z > 1
-                slcpos = z.Value;
+                slcpos = round(z.Value);
             else
                 slcpos = 1;
             end
@@ -401,13 +403,13 @@ end
     function [pts]=delpairtrack(source, event, pts, pix_size)
         if isstruct(pts) ==1
             if num_p > 1
-                stgpos = p.Value;
+                stgpos = round(p.Value);
             else
                 stgpos=1;
             end
             
             if num_z > 1
-                slcpos = z.Value;
+                slcpos = round(z.Value);
             else
                 slcpos = 1;
             end
