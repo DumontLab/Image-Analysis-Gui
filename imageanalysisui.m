@@ -32,7 +32,7 @@ num_z = metadata.getPixelsSizeZ(0).getValue(); % number of Z slices
 num_c = metadata.getPixelsSizeC(0).getValue(); % number of wavelengths
 num_t = metadata.getPixelsSizeT(0).getValue(); % number of timepoints
 num_p = metadata.getImageCount(); %number of stage positions
-time = gettimestepOME(metadata, num_z, num_p, num_c , num_t); %list of timepoints
+timepoints = gettimestepOME(metadata, num_z, num_p, num_c , num_t); %list of timepoints
 
 
 %%%Pulls metadata from OME format. useful because it does not change
@@ -41,35 +41,39 @@ time = gettimestepOME(metadata, num_z, num_p, num_c , num_t); %list of timepoint
 
 
 
-dimensions=[num_c num_z num_p];
+dimensions=[num_c num_z num_p num_t];
 
 pixeldim=[ydim xdim];
 
 alldim=[pixeldim dimensions];
 
 megastack=zeros(alldim);
-
-
-for i=1:num_p
-    if num_c < 4
-        for j=1:num_c
-            for q=1:num_z
-                megastack(:,:,j,q,i)=nd_file{i,1}{q+(j-1)*num_z};
-                %disp(q+(j-1)*num_z)
+t_ind=0;
+for x=1:num_t
+    planes=0;
+    for i=1:num_p
+        if num_c < 4
+            for j=1:num_c
+                for q=1:num_z
+                    megastack(:,:,j,q,i,x)=nd_file{i,1}{q+(j-1)*num_z + t_ind};
+                    planes = planes + 1;
+                    %disp(q+(j-1)*num_z)
+                end
             end
-        end
-    else
-        colors= [1 2 3 4];
-        drop=input('Too many colors! Please chose which channel to drop (1-4) ');
-        colors(colors==drop)=[];
-        for j=1:num_c
-            for q=1:num_z
-                megastack(:,:,j,q,i)=nd_file{i,1}{q+(colors(j)-1)*num_z};
+        else
+            colors= [1 2 3 4];
+            drop=input('Too many colors! Please chose which channel to drop (1-4) ');
+            colors(colors==drop)=[];
+            for j=1:num_c
+                for q=1:num_z
+                    megastack(:,:,j,q,i,x)=nd_file{i,1}{q+(colors(j)-1)*num_z + t_ind};
+                    planes = planes + 1;
+                end
             end
         end
     end
+    t_ind = planes + t_ind;
 end
-
 
 
 %builds one gigantic stack to pull data from: X x Y x C x Z x P
@@ -90,7 +94,7 @@ imAX.Position=imageposition;
 %set(gca,'XTick','none')
 %gca.XTickLabel='none';
 %%%
-zsliderpos=[figsize(1)*.2 figsize(2)*.05 figsize(1)*.75 figsize(2)*.025];
+zsliderpos=[figsize(1)*.2 figsize(2)*.03 figsize(1)*.75 figsize(2)*.025];
 
 if num_z>1
     z = uicontrol('Style', 'slider',...
@@ -105,7 +109,7 @@ end
 
 
 
-psliderpos=[figsize(1)*.2 figsize(2)*.1 figsize(1)*.75 figsize(2)*.025];
+psliderpos=[figsize(1)*.2 figsize(2)*.08 figsize(1)*.75 figsize(2)*.025];
 
 if num_p>1
     p = uicontrol('Style', 'slider',...
@@ -117,11 +121,23 @@ else
     p.Value=1;
 end
 
+tsliderpos=[figsize(1)*.2 figsize(2)*.13 figsize(1)*.75 figsize(2)*.025];
+
+if num_t>1
+    t = uicontrol('Style', 'slider',...
+        'Min',1,'Max',num_t,'Value',1,...
+        'Position', tsliderpos,...
+        'SliderStep', [1, 1] / (num_t - 1),...
+        'Callback', {@get_t_pos,pts});
+else
+    t.Value=1;
+end
+
 kpairbuttonpos=[figsize(1)*.02 figsize(2)*.9 figsize(1)*.10 figsize(2)*.025];
 
 kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
     'Position', kpairbuttonpos,...
-    'Callback', {@setptstopairs,pts,pix_size});
+    'Callback', {@setptstopairs,pts,pix_size,timepoints});
 
 %sets the callback function on the image to be "MarkKPairs"
 
@@ -163,11 +179,11 @@ gsliderpos=[figsize(1)*.02 figsize(2)*.11 figsize(1)*.12 figsize(2)*.025];
 
 
 if num_c > 1
-g = uicontrol('Style', 'slider',...
-    'Min',0,'Max',max_g,'Value',255,...
-    'Position', gsliderpos,...
-    'SliderStep', [1 1] / (255 - 0),...
-    'Callback', {@getGpos,pts,g_scaler,pix_size});
+    g = uicontrol('Style', 'slider',...
+        'Min',0,'Max',max_g,'Value',255,...
+        'Position', gsliderpos,...
+        'SliderStep', [1 1] / (255 - 0),...
+        'Callback', {@getGpos,pts,g_scaler,pix_size});
 else
     g.Value = 255
 end
@@ -178,12 +194,12 @@ max_b=255;
 bsliderpos=[figsize(1)*.02 figsize(2)*.05 figsize(1)*.12 figsize(2)*.025];
 
 if num_c > 2
-
-b = uicontrol('Style', 'slider',...
-    'Min',0,'Max',max_b,'Value',255,...
-    'Position', bsliderpos,...
-    'SliderStep', [1 1] / (255 - 0),...
-    'Callback', {@getBpos,pts,b_scaler,pix_size});
+    
+    b = uicontrol('Style', 'slider',...
+        'Min',0,'Max',max_b,'Value',255,...
+        'Position', bsliderpos,...
+        'SliderStep', [1 1] / (255 - 0),...
+        'Callback', {@getBpos,pts,b_scaler,pix_size});
 else
     b.Value = 255;
 end
@@ -192,16 +208,16 @@ end
     function ppos=getppos(source,event,pts)
         val=round(source.Value);
         
-        multicolorimage = megastack(:,:,1:num_c,z.Value,val);
+        multicolorimage = megastack(:,:,1:num_c,z.Value,val, t.Value);
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
         
         if num_c > 1
-        [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g.Value/255);
+            [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g.Value/255);
         end
         
         if num_c > 2
-        [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b.Value/255);
+            [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b.Value/255);
         end
         
         h=findobj(gca,'Type','hggroup');
@@ -210,8 +226,8 @@ end
         ppos=val;
         if isstruct(pts) == 1
             if pts(val).num_kin ~= 0
-                K1check=find(pts(val).K1coord(:,3)==z.Value);
-                K2check=find(pts(val).K2coord(:,3)==z.Value);
+                K1check=find(pts(val).K1coord(:,3)==z.Value & pts(stgpos).K1coord(:,4)==t.Value);
+                K2check=find(pts(val).K2coord(:,3)==z.Value & pts(stgpos).K2coord(:,4)==t.Value);
                 if isempty(K1check) == 0
                     h=viscircles(pts(val).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                     h.Children(1).Color=cyan;
@@ -228,28 +244,65 @@ end
 %function that changes the stage position using the slider while maintaining the
 %z position
 
-    function zpos=getsliderpos(source,event,pts)
+    function tpos=get_t_pos(source,event,pts)
         val=round(source.Value);
-        h=findobj(gca,'Type','hggroup');
-        delete(h);
-        multicolorimage = (megastack(:,:,1:num_c,val,p.Value));
+        
+        multicolorimage = megastack(:,:,1:num_c,z.Value, p.Value, val);
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
         
         if num_c > 1
-        [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g.Value/255);
+            [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g.Value/255);
         end
         
         if num_c > 2
-        [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b.Value/255);
+            [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b.Value/255);
+        end
+        
+        h=findobj(gca,'Type','hggroup');
+        delete(h);
+        img.CData=getMulticolorImageforUI(multicolorimage,num_c);
+        tpos=val;
+        stgpos = p.Value;
+        if isstruct(pts) == 1
+            if pts(stgpos).num_kin ~= 0
+                K1check=find(pts(stgpos).K1coord(:,3)==z.Value & pts(stgpos).K1coord(:,4)==val);
+                K2check=find(pts(stgpos).K2coord(:,3)==z.Value & pts(stgpos).K2coord(:,4)==val);
+                if isempty(K1check) == 0
+                    h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
+                    h.Children(1).Color=cyan;
+                end
+                if isempty(K2check) == 0
+                    h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                    h.Children(1).Color=orange;
+                end
+            end
+        end
+        %Redraws circles if they have been tracked using the Kpair tracker
+    end
+
+    function zpos=getsliderpos(source,event,pts)
+        val=round(source.Value);
+        h=findobj(gca,'Type','hggroup');
+        delete(h);
+        multicolorimage = (megastack(:,:,1:num_c,val,p.Value, t.Value));
+        
+        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
+        
+        if num_c > 1
+            [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g.Value/255);
+        end
+        
+        if num_c > 2
+            [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b.Value/255);
         end
         
         img.CData=getMulticolorImageforUI(multicolorimage , num_c);
         zpos=val;
         if isstruct(pts) == 1
             if pts(p.Value).num_kin ~= 0
-                K1check=find(pts(p.Value).K1coord(:,3)==val);
-                K2check=find(pts(p.Value).K2coord(:,3)==val);
+                K1check=find(pts(p.Value).K1coord(:,3)==val & pts(stgpos).K1coord(:,4)==t.Value);
+                K2check=find(pts(p.Value).K2coord(:,3)==val & pts(stgpos).K2coord(:,4)==t.Value);
                 if isempty(K1check) == 0
                     h=viscircles(pts(p.Value).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                     h.Children(1).Color=cyan;
@@ -266,13 +319,14 @@ end
 %function that changes the zposition using the slider while maintaining the
 %stage position
 
-    function pts=setptstopairs(source, event,pts, pix_size)
+    function pts=setptstopairs(source, event,pts, pix_size, timepoints)
         msgbox('You turned on The object pair marking option. Please click on an object, and then its complement (eg. a kinetochore and its sister). Please do not press this button again until you press the "Pairs Done" button.')
         
         for i=1:num_p
             s(i).num_kin=0;
             s(i).K1coord=[];
             s(i).K2coord=[];
+            s(i).timepoints = timepoints(:,i);
             
             
         end
@@ -288,9 +342,10 @@ end
     function pts=MarkKPairs(source, eventdata, pts, pixsize)
         AX=source.Parent;
         coord = get(AX, 'CurrentPoint');
-        coord = [coord(1,1) coord(1,2) z.Value];
+        coord = [coord(1,1) coord(1,2) z.Value t.Value];
         stgpos=round(p.Value);
         slcpos=round(z.Value);
+        tpos = round(t.Value);
         pts(stgpos).num_kin=pts(stgpos).num_kin+1;
         
         if rem(pts(stgpos).num_kin,2)==1
@@ -318,6 +373,14 @@ end
                 'Position', psliderpos,...
                 'SliderStep', [1, 1] / (num_p - 1),...
                 'Callback', {@getppos,pts});
+        end
+        
+        if num_t>1
+            t = uicontrol('Style', 'slider',...
+                'Min',1,'Max',num_t,'Value',t.Value,...
+                'Position', tsliderpos,...
+                'SliderStep', [1, 1] / (num_t - 1),...
+                'Callback', {@get_t_pos,pts});
         end
         
         %Recalls all of the sliders to update the pts struct within them
@@ -366,6 +429,14 @@ end
                     'SliderStep', [1, 1] / (num_p - 1),...
                     'Callback', {@getppos,pts});
             end
+            
+            if num_t>1
+                t = uicontrol('Style', 'slider',...
+                    'Min',1,'Max',num_t,'Value',t.Value,...
+                    'Position', tsliderpos,...
+                    'SliderStep', [1, 1] / (num_t - 1),...
+                    'Callback', {@get_t_pos,pts});
+            end
             deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
                 'Position',deletepairtrackbuttonpos,...
                 'Callback', {@delpairtrack,pts,pix_size});
@@ -381,11 +452,19 @@ end
                 slcpos = 1;
             end
             
+            if num_t > 1
+                timepos = round(t.Value);
+            else
+                timepos = 1;
+            end
+            
             h=findobj( gca, 'Type', 'hggroup' );
             delete( h );
             
-            K1check=find( pts( stgpos ).K1coord( :, 3 ) == slcpos);
-            K2check=find( pts( stgpos ).K2coord( :, 3 ) == slcpos);
+            K1check=find( pts( stgpos ).K1coord( :, 3 ) == slcpos...
+                & pts( stgpos ).K1coord( :, 4 ) == timepos);
+            K2check=find( pts( stgpos ).K2coord( :, 3 ) == slcpos...
+                & pts( stgpos ).K2coord( :, 4 ) == timepos);
             
             if isempty( K1check ) == 0
                 h=viscircles(pts(p.Value).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
@@ -414,6 +493,12 @@ end
                 slcpos = 1;
             end
             
+            if num_t > 1
+                timepos = round(t.Value);
+            else
+                timepos = 1;
+            end
+            
             if pts(stgpos).num_kin > 0
                 
                 
@@ -428,8 +513,10 @@ end
                 h=findobj( gca, 'Type', 'hggroup' );
                 delete( h );
                 
-                K1check=find( pts( stgpos ).K1coord( :, 3 ) == slcpos);
-                K2check=find( pts( stgpos ).K2coord( :, 3 ) == slcpos);
+                K1check=find( pts( stgpos ).K1coord( :, 3 ) == slcpos...
+                    & pts( stgpos ).K1coord( :, 4 ) == timepos);
+                K2check=find( pts( stgpos ).K2coord( :, 3 ) == slcpos... 
+                    & pts( stgpos ).K2coord( :, 4 ) == timepos);
                 
                 if isempty( K1check ) == 0
                     h=viscircles(pts(p.Value).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
@@ -454,6 +541,14 @@ end
                         'Position', psliderpos,...
                         'SliderStep', [1, 1] / (num_p - 1),...
                         'Callback', {@getppos,pts});
+                end
+                
+                if num_t>1
+                    t = uicontrol('Style', 'slider',...
+                        'Min',1,'Max',num_t,'Value',t.Value,...
+                        'Position', tsliderpos,...
+                        'SliderStep', [1, 1] / (num_t - 1),...
+                        'Callback', {@get_t_pos,pts});
                 end
                 
                 savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
@@ -488,22 +583,22 @@ end
         
         b_scaler = b.Value / 255;
         
-        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value));
+        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value, t.Value));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
         
         if num_c > 1
-        [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g_scaler);
+            [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g_scaler);
         end
         
         if num_c > 2
-        [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b_scaler);
+            [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b_scaler);
         end
         
         img.CData=getMulticolorImageforUI(multicolorimage, num_c);
         
-
+        
         
     end
 
@@ -517,19 +612,19 @@ end
         
         b_scaler = b.Value / 255;
         
-        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value));
+        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value, t.Value));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
         [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g_scaler);
         
         if num_c > 2
-        [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b_scaler);
+            [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b_scaler);
         end
         
         img.CData=getMulticolorImageforUI(multicolorimage, num_c);
         
-
+        
         
         
     end
@@ -543,7 +638,7 @@ end
         
         g_scaler = g.Value / 255;
         
-        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value));
+        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value, t.Value));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
@@ -553,7 +648,7 @@ end
         
         img.CData=getMulticolorImageforUI(multicolorimage, num_c);
         
-
+        
         
     end
 
@@ -574,13 +669,20 @@ if num_p>1
         'String','p');
 end
 
+if num_t>1
+    ttextpos=[figsize(1)*.15 figsize(2)*.13 figsize(1)*.025 figsize(2)*.025];
+    ttxt = uicontrol('Style','text',...
+        'Position',ttextpos,...
+        'String','t');
+end
+
 if num_c>1
     rtextpos=[figsize(1)*.07 figsize(2)*.2 figsize(1)*.025 figsize(2)*.025];
     rtxt = uicontrol('Style','text',...
         'Position',rtextpos,...
         'String','r');
 else
-rtextpos=[figsize(1)*.07 figsize(2)*.2 figsize(1)*.025 figsize(2)*.025];
+    rtextpos=[figsize(1)*.07 figsize(2)*.2 figsize(1)*.025 figsize(2)*.025];
     rtxt = uicontrol('Style','text',...
         'Position',rtextpos,...
         'String','Brightess/Contrast');
