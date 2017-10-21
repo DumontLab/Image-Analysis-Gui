@@ -39,14 +39,12 @@ for i=1:num_p
        data_struct(i).num_kin = size(temp, 1);
        data_struct(i).timepoints = timepoints(:,i);
        %Fills up struct with data for tracking
-       data_struct(i).datatype = 1;
     else
        data_struct(i).K1coord = [];
        data_struct(i).K2coord = [];
        data_struct(i).num_kin = 0;
        data_struct(i).timepoints = timepoints(:,i);
        %fills empty stage positions
-       data_struct(i).datatype = 1;
     end
     
 end

@@ -32,10 +32,10 @@ timepoints = [];
 ind = 1;
 for i=1:numel(data)
     if data(i).num_kin>0
-        object(ind:ind + data(i).num_kin-1,1) = data(i).feat_name;
-        object(ind:ind + data(i).num_kin-1,2) = num2cell((ind:ind + data(i).num_kin-1)');
-        object(ind:ind + data(i).num_kin-1,3) = ...
-            num2cell(i * ones(data(i).num_kin,1));
+        object(1, ind:ind + data(i).num_kin-1) = data(i).feat_name;
+        object(2, ind:ind + data(i).num_kin-1) = num2cell((ind:ind + data(i).num_kin-1));
+        object(3, ind:ind + data(i).num_kin-1) = ...
+            num2cell(i * ones(1,data(i).num_kin));
         tempmatrix=[data(i).coord i*ones(size(data(i).coord,1),1)];
         %Builds a matrix with all kinetochore coordinate data  for a given
         %stage position as well as the position itself
@@ -45,8 +45,7 @@ for i=1:numel(data)
 end
 
 data_key={'x (pixels)' 'y (pixels)' 'z' 't' 'object number' 'Stage Position'...
-    'Number of total positions' 'Object Label' 'Object Number'...
-    'Object Stage Position' 'Timepoints (seconds)'};
+    'Number of total positions' 'Timepoints (seconds)'};
 
 %text key that will tell you what each column represents
 
@@ -62,9 +61,8 @@ celldata=num2cell(data_matrix);
 
 celldata{1,7}=num_p;
 
-celldata(1:size(object,1),8:10)=object;
 
-celldata(1:size(timepoints,1),11:11 + size(timepoints,2) - 1) = num2cell(timepoints); 
+celldata(1:size(timepoints,1),8 : 8 + size(timepoints,2) - 1) = num2cell(timepoints); 
 
 %adds in the total number of positions. Important for reconstructing the
 %data struct.
@@ -75,7 +73,9 @@ cd(pathname)
 
 pix_size=str2num(pix_size{1});
 
-xlswrite(filename,sheetdata);
+xlswrite(filename, sheetdata);
+
+xlswrite(filename, object, 2);
 
 
 

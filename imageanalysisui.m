@@ -166,12 +166,33 @@ openpair = uicontrol('Style', 'pushbutton', 'String', 'Open pair data',...
     'Callback', {@openpairs,pix_size});
 %intalls the button to open pair data
 
+savetimebuttonpos=[figsize(1)*.02 figsize(2)*.5 figsize(1)*.1 figsize(2)*.025];
+
+savetimebutton = uicontrol('Style', 'pushbutton', 'String', 'Save time data',...
+    'Position',savetimebuttonpos,...
+    'Callback', {@savetime,pts,pix_size});
+
+%installs the button used to save pair data
+
+opentimebuttonpos=[figsize(1)*.02 figsize(2)*.45 figsize(1)*.1 figsize(2)*.025];
+
+opentimebutton = uicontrol('Style', 'pushbutton', 'String', 'Open time data',...
+    'Position',opentimebuttonpos,...
+    'Callback', {@opentime,pix_size});
+%intalls the button to open pair data
+
 deletepairtrackbuttonpos=[figsize(1)*.02 figsize(2)*.75 figsize(1)*.1 figsize(2)*.025];
 
 deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
     'Position',deletepairtrackbuttonpos,...
     'Callback', {@delpairtrack,pts,pix_size});
 %intalls the button to delete the last tracked mark
+
+deletetimetrackbuttonpos=[figsize(1)*.02 figsize(2)*.4 figsize(1)*.1 figsize(2)*.025];
+
+deletetimetrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
+    'Position',deletetimetrackbuttonpos,...
+    'Callback', {@deltimetrack,pts,pix_size});
 
 max_r=255;
 
@@ -411,15 +432,15 @@ end
             'Position', newfeatbuttonpos,...
             'Callback', {@mark_new_feat, pts, pix_size});
         
-
-
         
-    
-
         
-        %         deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
-        %             'Position',deletepairtrackbuttonpos,...
-        %             'Callback', {@delpairtrack,pts,pix_size});
+        
+        
+        
+        
+        deletetimetrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
+            'Position',deletetimetrackbuttonpos,...
+            'Callback', {@deltimetrack,pts,pix_size});
     end
 
 %function that sets callback function on the image to be "MarkKPairs" and builds the struct "pts" that will hold all the data.
@@ -434,7 +455,7 @@ end
         if pts(p.Value).num_kin == 0;
             pts(p.Value).feat_name=feat_name;
         else
-            pts(p.Value).feat_name{pts(p.Value).num_kin+1,1} = feat_name;
+            pts(p.Value).feat_name{pts(p.Value).num_kin+1} = feat_name{1};
             
         end
         pts(p.Value).num_kin = pts(p.Value).num_kin + 1;
@@ -444,7 +465,7 @@ end
             'Position', newfeatbuttonpos,...
             'Callback', {@mark_new_feat,pts,pix_size});
         
-
+        
     end
 
     function pts=MarkTimeTrack(source, eventdata, pts, pixsize)
@@ -495,10 +516,10 @@ end
         
         if pts(p.Value).num_kin > 1
             Kcheck=find(pts(stgpos).coord(:,3) == slcpos & pts(stgpos).coord(:,4) == t.Value + 1);
-                    if isempty(Kcheck) == 0
-                        h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
-                        h.Children(1).Color=cyan;
-                    end
+            if isempty(Kcheck) == 0
+                h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
+                h.Children(1).Color=cyan;
+            end
         end
         
         if num_z>1
@@ -529,6 +550,14 @@ end
         mark_feature_ui = uicontrol('Style', 'pushbutton', 'String', 'Track New Feature',...
             'Position', newfeatbuttonpos,...
             'Callback', {@mark_new_feat,pts,pix_size});
+        
+        deletetimetrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
+            'Position',deletetimetrackbuttonpos,...
+            'Callback', {@deltimetrack,pts,pix_size});
+        
+        savetimebutton = uicontrol('Style', 'pushbutton', 'String', 'Save time data',...
+            'Position',savetimebuttonpos,...
+            'Callback', {@savetime,pts,pix_size});
         
     end
 
@@ -595,6 +624,14 @@ end
         savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
             'Position',savepairbuttonpos,...
             'Callback', {@savepairs,pts,pix_size});
+    end
+
+    function [pix_size]=savetime(source, event, pts, pix_size)
+        pix_size = WriteTimeDataToFile_ImAlGui( pts, pix_size );
+        img.ButtonDownFcn={@MarkTimeTrack,pts, pix_size};
+        savetimebutton = uicontrol('Style', 'pushbutton', 'String', 'Save time data',...
+            'Position',savetimebuttonpos,...
+            'Callback', {@savetime,pts,pix_size});
     end
 
     function [pts]=openpairs(source,event,pix_size);
@@ -668,6 +705,76 @@ end
                 h=viscircles(pts(p.Value).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
                 h.Children(1).Color=orange;
             end
+            
+        end
+    end
+
+    function [pts]=opentime(source,event,pix_size)
+        check=questdlg('Proceeding will clear the currently tracked data on the UI. Continue?','Save data?','Yes','No','Yes');
+        %makes sure you don't accidentally erase your progess on the figure
+        if strcmp(check,'Yes')==1
+            [ pts, data_matrix, column_labels ] = ReadTimeDataFromFile_ImAlGui;
+            %reads data from file. Might use the other inputs in a later
+            %build.
+            img.ButtonDownFcn={@MarkTimeTrack,pts, pix_size};
+            savetimebutton = uicontrol('Style', 'pushbutton', 'String', 'Save time data',...
+                'Position',savetimebuttonpos,...
+                'Callback', {@savetime,pts,pix_size});
+            if num_z>1
+                z = uicontrol('Style', 'slider',...
+                    'Min',1,'Max',num_z,'Value',z.Value,...
+                    'Position', zsliderpos,...
+                    'SliderStep', [1, 1] / (num_z - 1),...
+                    'Callback', {@getsliderpos,pts});
+            end
+            if num_p>1
+                p = uicontrol('Style', 'slider',...
+                    'Min',1,'Max',num_p,'Value',p.Value,...
+                    'Position', psliderpos,...
+                    'SliderStep', [1, 1] / (num_p - 1),...
+                    'Callback', {@getppos,pts});
+            end
+            
+            if num_t>1
+                t = uicontrol('Style', 'slider',...
+                    'Min',1,'Max',num_t,'Value',t.Value,...
+                    'Position', tsliderpos,...
+                    'SliderStep', [1, 1] / (num_t - 1),...
+                    'Callback', {@get_t_pos,pts});
+            end
+            deletetimetrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
+                'Position',deletetimetrackbuttonpos,...
+                'Callback', {@deltimetrack,pts,pix_size});
+            if num_p > 1
+                stgpos = round(p.Value);
+            else
+                stgpos=1;
+            end
+            
+            if num_z > 1
+                slcpos = round(z.Value);
+            else
+                slcpos = 1;
+            end
+            
+            if num_t > 1
+                timepos = round(t.Value);
+            else
+                timepos = 1;
+            end
+            
+            h=findobj( gca, 'Type', 'hggroup' );
+            delete( h );
+            
+            Kcheck=find( pts( stgpos ).coord( :, 3 ) == slcpos...
+                & pts( stgpos ).coord( :, 4 ) == timepos);
+            
+            
+            if isempty( Kcheck ) == 0
+                h=viscircles(pts(p.Value).K1coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
+                h.Children(1).Color=cyan;
+            end
+            
             
         end
     end
@@ -757,6 +864,95 @@ end
                 deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
                     'Position',deletepairtrackbuttonpos,...
                     'Callback', {@delpairtrack,pts,pix_size});
+                
+                
+                %removes the all the circles
+                
+            else
+                msgbox( 'No tracks to delete!' )
+            end
+        end
+    end
+
+    function [pts]=deltimetrack(source, event, pts, pix_size)
+        if isstruct(pts) ==1
+            if num_p > 1
+                stgpos = round(p.Value);
+            else
+                stgpos=1;
+            end
+            
+            if num_z > 1
+                slcpos = round(z.Value);
+            else
+                slcpos = 1;
+            end
+            
+            if num_t > 1
+                timepos = round(t.Value);
+            else
+                timepos = 1;
+            end
+            
+            if isempty(pts(stgpos).coord) == 0
+                
+                
+                
+                pts(stgpos).coord(size(pts(stgpos).coord, 1), :) = [];
+                
+                %Delete the coordinate
+                
+                %Brings the count down
+                h=findobj( gca, 'Type', 'hggroup' );
+                delete( h );
+                
+                Kcheck=find( pts( stgpos ).coord( :, 3 ) == slcpos...
+                    & pts( stgpos ).coord( :, 4 ) == timepos);
+                
+                
+                if isempty( Kcheck ) == 0
+                    h=viscircles(pts(p.Value).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
+                    h.Children(1).Color=cyan;
+                end
+                
+                
+                
+                if num_z>1
+                    z = uicontrol('Style', 'slider',...
+                        'Min',1,'Max',num_z,'Value',z.Value,...
+                        'Position', zsliderpos,...
+                        'SliderStep', [1, 1] / (num_z - 1),...
+                        'Callback', {@getsliderpos,pts});
+                end
+                if num_p>1
+                    p = uicontrol('Style', 'slider',...
+                        'Min',1,'Max',num_p,'Value',p.Value,...
+                        'Position', psliderpos,...
+                        'SliderStep', [1, 1] / (num_p - 1),...
+                        'Callback', {@getppos,pts});
+                end
+                
+                if num_t>1
+                    t = uicontrol('Style', 'slider',...
+                        'Min',1,'Max',num_t,'Value',t.Value,...
+                        'Position', tsliderpos,...
+                        'SliderStep', [1, 1] / (num_t - 1),...
+                        'Callback', {@get_t_pos,pts});
+                end
+                
+                savetimebutton = uicontrol('Style', 'pushbutton', 'String', 'Save time data',...
+                    'Position',savetimebuttonpos,...
+                    'Callback', {@savetime,pts,pix_size});
+                
+                opentimebutton = uicontrol('Style', 'pushbutton', 'String', 'Open time data',...
+                    'Position',opentimebuttonpos,...
+                    'Callback', {@opentime,pix_size});
+                
+                img.ButtonDownFcn={@MarkTimeTracks,pts, pix_size};
+                
+                deletetimetrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
+                    'Position',deletetimetrackbuttonpos,...
+                    'Callback', {@deltimetrack,pts,pix_size});
                 
                 
                 %removes the all the circles
