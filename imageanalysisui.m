@@ -141,6 +141,16 @@ kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
 
 %sets the callback function on the image to be "MarkKPairs"
 
+timetrackbuttonpos=[figsize(1)*.02 figsize(2)*.6 figsize(1)*.10 figsize(2)*.025];
+
+track_button = uicontrol('Style', 'pushbutton', 'String', 'Time Track',...
+    'Position', timetrackbuttonpos,...
+    'Callback', {@setptstotime,pts,pix_size,timepoints});
+
+newfeatbuttonpos=[figsize(1)*.02 figsize(2)*.55 figsize(1)*.10 figsize(2)*.025];
+
+
+
 savepairbuttonpos=[figsize(1)*.02 figsize(2)*.85 figsize(1)*.1 figsize(2)*.025];
 
 savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
@@ -185,7 +195,7 @@ if num_c > 1
         'SliderStep', [1 1] / (255 - 0),...
         'Callback', {@getGpos,pts,g_scaler,pix_size});
 else
-    g.Value = 255
+    g.Value = 255;
 end
 
 
@@ -224,21 +234,37 @@ end
         delete(h);
         img.CData=getMulticolorImageforUI(multicolorimage,num_c);
         ppos=val;
+        
+        stgpos = val;
+        slcpos = z.Value;
+        tpos = t.Value;
+        
         if isstruct(pts) == 1
-            if pts(val).num_kin ~= 0
-                K1check=find(pts(val).K1coord(:,3)==z.Value & pts(stgpos).K1coord(:,4)==t.Value);
-                K2check=find(pts(val).K2coord(:,3)==z.Value & pts(stgpos).K2coord(:,4)==t.Value);
-                if isempty(K1check) == 0
-                    h=viscircles(pts(val).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
-                    h.Children(1).Color=cyan;
+            if pts(stgpos).datatype == 1;
+                if pts(stgpos).num_kin ~= 0
+                    K1check=find(pts(stgpos).K1coord(:,3)==z.Value & pts(stgpos).K1coord(:,4)==t.Value);
+                    K2check=find(pts(stgpos).K2coord(:,3)==z.Value & pts(stgpos).K2coord(:,4)==t.Value);
+                    if isempty(K1check) == 0
+                        h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
+                        h.Children(1).Color=cyan;
+                    end
+                    if isempty(K2check) == 0
+                        h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                        h.Children(1).Color=orange;
+                    end
+                    %Redraws circles if they have been tracked using the Kpair tracker
                 end
-                if isempty(K2check) == 0
-                    h=viscircles(pts(val).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
-                    h.Children(1).Color=orange;
+            elseif pts(i).datatype == 2;
+                if pts(stgpos).num_kin ~= 0
+                    Kcheck=find(pts(stgpos).coord(:,3)==z.Value & pts(stgpos).coord(:,4)==t.Value);
+                    if isempty(Kcheck) == 0
+                        h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
+                        h.Children(1).Color=cyan;
+                    end
                 end
             end
         end
-        %Redraws circles if they have been tracked using the Kpair tracker
+        
     end
 
 %function that changes the stage position using the slider while maintaining the
@@ -262,23 +288,37 @@ end
         h=findobj(gca,'Type','hggroup');
         delete(h);
         img.CData=getMulticolorImageforUI(multicolorimage,num_c);
-        tpos=val;
+        
         stgpos = p.Value;
+        slcpos = z.Value;
+        tpos = val;
+        
         if isstruct(pts) == 1
-            if pts(stgpos).num_kin ~= 0
-                K1check=find(pts(stgpos).K1coord(:,3)==z.Value & pts(stgpos).K1coord(:,4)==val);
-                K2check=find(pts(stgpos).K2coord(:,3)==z.Value & pts(stgpos).K2coord(:,4)==val);
-                if isempty(K1check) == 0
-                    h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
-                    h.Children(1).Color=cyan;
+            if pts(stgpos).datatype == 1;
+                if pts(stgpos).num_kin ~= 0
+                    K1check=find(pts(stgpos).K1coord(:,3)==slcpos & pts(stgpos).K1coord(:,4)==t.Value);
+                    K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==t.Value);
+                    if isempty(K1check) == 0
+                        h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
+                        h.Children(1).Color=cyan;
+                    end
+                    if isempty(K2check) == 0
+                        h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                        h.Children(1).Color=orange;
+                    end
+                    %Redraws circles if they have been tracked using the Kpair tracker
                 end
-                if isempty(K2check) == 0
-                    h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
-                    h.Children(1).Color=orange;
+            elseif pts(i).datatype == 2;
+                if pts(stgpos).num_kin ~= 0
+                    Kcheck=find(pts(stgpos).coord(:,3)==slcpos & pts(stgpos).coord(:,4)==t.Value);
+                    if isempty(Kcheck) == 0
+                        h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
+                        h.Children(1).Color=cyan;
+                    end
                 end
             end
+            %Redraws circles if they have been tracked using the Kpair tracker
         end
-        %Redraws circles if they have been tracked using the Kpair tracker
     end
 
     function zpos=getsliderpos(source,event,pts)
@@ -299,19 +339,35 @@ end
         
         img.CData=getMulticolorImageforUI(multicolorimage , num_c);
         zpos=val;
+        stgpos = p.Value;
+        slcpos = val;
+        tpos = t.Value;
+        
         if isstruct(pts) == 1
-            if pts(p.Value).num_kin ~= 0
-                K1check=find(pts(p.Value).K1coord(:,3)==val & pts(stgpos).K1coord(:,4)==t.Value);
-                K2check=find(pts(p.Value).K2coord(:,3)==val & pts(stgpos).K2coord(:,4)==t.Value);
-                if isempty(K1check) == 0
-                    h=viscircles(pts(p.Value).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
-                    h.Children(1).Color=cyan;
+            if pts(stgpos).datatype == 1;
+                if pts(stgpos).num_kin ~= 0
+                    K1check=find(pts(stgpos).K1coord(:,3)==slcpos & pts(stgpos).K1coord(:,4)==t.Value);
+                    K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==t.Value);
+                    if isempty(K1check) == 0
+                        h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
+                        h.Children(1).Color=cyan;
+                    end
+                    if isempty(K2check) == 0
+                        h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                        h.Children(1).Color=orange;
+                    end
+                    %Redraws circles if they have been tracked using the Kpair tracker
                 end
-                if isempty(K2check) == 0
-                    h=viscircles(pts(p.Value).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
-                    h.Children(1).Color=orange;
+            elseif pts(i).datatype == 2;
+                if pts(stgpos).num_kin ~= 0
+                    Kcheck=find(pts(stgpos).coord(:,3)==slcpos & pts(stgpos).coord(:,4)==t.Value);
+                    if isempty(Kcheck) == 0
+                        h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
+                        h.Children(1).Color=cyan;
+                    end
                 end
             end
+            %Redraws circles if they have been tracked using the Kpair tracker
         end
         %Redraws circles if they have been tracked using the Kpair tracker
     end
@@ -327,7 +383,7 @@ end
             s(i).K1coord=[];
             s(i).K2coord=[];
             s(i).timepoints = timepoints(:,i);
-            
+            s(i).datatype = 1;
             
         end
         pts=s;
@@ -337,7 +393,144 @@ end
             'Callback', {@delpairtrack,pts,pix_size});
     end
 
+    function ffff=setptstotime(source, event, pts, pix_size, timepoints)
+        uiwait(msgbox('You turned on the time tracking option. Select "Track New Feature" to get started.'))
+        
+        for i=1:num_p
+            s(i).num_kin=0;
+            s(i).timepoints = timepoints(:,i);
+            s(i).datatype = 2;
+            
+            s(i).coord=[];
+        end
+        pts=s;
+        
+        figure(1)
+        
+        mark_feature_ui = uicontrol('Style', 'pushbutton', 'String', 'Track New Feature',...
+            'Position', newfeatbuttonpos,...
+            'Callback', {@mark_new_feat, pts, pix_size});
+        
+
+
+        
+    
+
+        
+        %         deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
+        %             'Position',deletepairtrackbuttonpos,...
+        %             'Callback', {@delpairtrack,pts,pix_size});
+    end
+
 %function that sets callback function on the image to be "MarkKPairs" and builds the struct "pts" that will hold all the data.
+
+    function pts=mark_new_feat(source, eventdata, pts, pixsize)
+        
+        feat_name = inputdlg('What is the name of this feature?', 'name', 1);
+        
+        
+        
+        
+        if pts(p.Value).num_kin == 0;
+            pts(p.Value).feat_name=feat_name;
+        else
+            pts(p.Value).feat_name{pts(p.Value).num_kin+1,1} = feat_name;
+            
+        end
+        pts(p.Value).num_kin = pts(p.Value).num_kin + 1;
+        img.ButtonDownFcn = {@MarkTimeTrack ,pts, pix_size};
+        
+        mark_feature_ui = uicontrol('Style', 'pushbutton', 'String', 'Track New Feature',...
+            'Position', newfeatbuttonpos,...
+            'Callback', {@mark_new_feat,pts,pix_size});
+        
+
+    end
+
+    function pts=MarkTimeTrack(source, eventdata, pts, pixsize)
+        
+        AX=source.Parent;
+        coord = get(AX, 'CurrentPoint');
+        coord = [coord(1,1) coord(1,2) z.Value t.Value pts(p.Value).num_kin];
+        stgpos=round(p.Value);
+        slcpos=round(z.Value);
+        tpos = round(t.Value);
+        
+        if isempty(pts(stgpos).coord) == 0
+            [row, c] = find(pts(stgpos).coord(pts(stgpos).coord(:, 4) == tpos , :));
+            matchcoords = pts(stgpos).coord(pts(stgpos).coord(:, 4) == tpos , :);
+            if isempty(matchcoords) == 1
+                pts(stgpos).coord = [pts(stgpos).coord; coord];
+            elseif ismember(pts(p.Value).num_kin, matchcoords(:,5)) == 1
+                pts(stgpos).coord(row(matchcoords(:,5) == pts(p.Value).num_kin), :)...
+                    = coord;
+            else
+                pts(stgpos).coord = [pts(stgpos).coord; coord];
+            end
+        else
+            
+            pts(stgpos).coord = [pts(stgpos).coord; coord];
+        end
+        
+        
+        
+        
+        img.ButtonDownFcn = {@MarkTimeTrack ,pts, pix_size};
+        
+        h=findobj(gca,'Type','hggroup');
+        delete(h);
+        multicolorimage = (megastack(:,:,1:num_c, slcpos, stgpos, tpos+1));
+        
+        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
+        
+        if num_c > 1
+            [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g.Value/255);
+        end
+        
+        if num_c > 2
+            [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b.Value/255);
+        end
+        
+        img.CData=getMulticolorImageforUI(multicolorimage , num_c);
+        
+        if pts(p.Value).num_kin > 1
+            Kcheck=find(pts(stgpos).coord(:,3) == slcpos & pts(stgpos).coord(:,4) == t.Value + 1);
+                    if isempty(Kcheck) == 0
+                        h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
+                        h.Children(1).Color=cyan;
+                    end
+        end
+        
+        if num_z>1
+            z = uicontrol('Style', 'slider',...
+                'Min',1,'Max',num_z,'Value',z.Value,...
+                'Position', zsliderpos,...
+                'SliderStep', [1, 1] / (num_z - 1),...
+                'Callback', {@getsliderpos,pts});
+        end
+        if num_p>1
+            p = uicontrol('Style', 'slider',...
+                'Min',1,'Max',num_p,'Value',p.Value,...
+                'Position', psliderpos,...
+                'SliderStep', [1, 1] / (num_p - 1),...
+                'Callback', {@getppos,pts});
+        end
+        
+        if num_t>1
+            t = uicontrol('Style', 'slider',...
+                'Min',1,'Max',num_t,'Value',t.Value + 1,...
+                'Position', tsliderpos,...
+                'SliderStep', [1, 1] / (num_t - 1),...
+                'Callback', {@get_t_pos,pts});
+        end
+        
+        %Recalls all of the sliders to update the pts struct within them
+        
+        mark_feature_ui = uicontrol('Style', 'pushbutton', 'String', 'Track New Feature',...
+            'Position', newfeatbuttonpos,...
+            'Callback', {@mark_new_feat,pts,pix_size});
+        
+    end
 
     function pts=MarkKPairs(source, eventdata, pts, pixsize)
         AX=source.Parent;
@@ -515,7 +708,7 @@ end
                 
                 K1check=find( pts( stgpos ).K1coord( :, 3 ) == slcpos...
                     & pts( stgpos ).K1coord( :, 4 ) == timepos);
-                K2check=find( pts( stgpos ).K2coord( :, 3 ) == slcpos... 
+                K2check=find( pts( stgpos ).K2coord( :, 3 ) == slcpos...
                     & pts( stgpos ).K2coord( :, 4 ) == timepos);
                 
                 if isempty( K1check ) == 0
