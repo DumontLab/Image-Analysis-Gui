@@ -30,12 +30,14 @@ num_p = numel(data);
 %gets position number
 timepoints = [];
 ind = 1;
+length_feat = 0;
 for i=1:numel(data)
     if data(i).num_kin>0
-        object(1, ind:ind + data(i).num_kin-1) = data(i).feat_name;
-        object(2, ind:ind + data(i).num_kin-1) = num2cell((ind:ind + data(i).num_kin-1));
-        object(3, ind:ind + data(i).num_kin-1) = ...
+        object(1, length_feat + ind:length_feat + ind + data(i).num_kin-1) = data(i).feat_name;
+        object(2, length_feat + ind:length_feat + ind + data(i).num_kin-1) = num2cell((ind:ind + data(i).num_kin-1));
+        object(3, length_feat + ind:length_feat + ind + data(i).num_kin-1) = ...
             num2cell(i * ones(1,data(i).num_kin));
+        length_feat = size( object, 2 );
         tempmatrix=[data(i).coord i*ones(size(data(i).coord,1),1)];
         %Builds a matrix with all kinetochore coordinate data  for a given
         %stage position as well as the position itself
@@ -67,7 +69,9 @@ celldata(1:size(timepoints,1),8 : 8 + size(timepoints,2) - 1) = num2cell(timepoi
 %adds in the total number of positions. Important for reconstructing the
 %data struct.
 
-sheetdata=[data_key; celldata];
+sheetdata=data_key;
+
+sheetdata(2:size(celldata,1) + 1 ,1:size( celldata, 2))= celldata;
 
 cd(pathname)
 

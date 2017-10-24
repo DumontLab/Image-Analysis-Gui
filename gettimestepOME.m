@@ -10,7 +10,7 @@ for i = 0 : p - 1
     
     time_array = [];
     
-    while plane < totalsize - 1
+    while plane < totalsize 
         
         timepoint = metadata.getPlaneDeltaT(i, plane);
         

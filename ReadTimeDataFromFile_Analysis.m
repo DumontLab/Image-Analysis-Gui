@@ -1,11 +1,10 @@
-function [ data_struct, data_matrix, column_labels] = ReadTimeDataFromFile_ImAlGui
+function [ data_struct, data_matrix, column_labels] = ReadTimeDataFromFile_Analysis(FileName)
 %Reads data made from the write pair data ImAlGui code back into the image
 %analysis GUI. Outputs the neccessary struct, but also a matrix containing
 %all the data, as well as a series of labels indicating the values in
 %columns
 
-[FileName,PathName] = uigetfile('.xls');
-cd(PathName)
+
 [ data, column_labels, raw] = xlsread(FileName, 1);
 [objdata, objtxt, raw] = xlsread(FileName, 2);
 %get excel file

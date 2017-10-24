@@ -48,14 +48,17 @@ pixeldim=[ydim xdim];
 alldim=[pixeldim dimensions];
 
 megastack=zeros(alldim);
-t_ind=0;
-for x=1:num_t
-    planes=0;
-    for i=1:num_p
+
+
+
+for i=1:num_p
+    t_ind=0;
+    for x=1:num_t
+        planes=0;
         if num_c < 4
             for j=1:num_c
                 for q=1:num_z
-                    megastack(:,:,j,q,i,x)=nd_file{i,1}{q+(j-1)*num_z + t_ind};
+                    megastack(:,:,j,q,i,x)=nd_file{i,1}{q+(j-1)*num_z + t_ind, 1};
                     planes = planes + 1;
                     %disp(q+(j-1)*num_z)
                 end
@@ -66,13 +69,14 @@ for x=1:num_t
             colors(colors==drop)=[];
             for j=1:num_c
                 for q=1:num_z
-                    megastack(:,:,j,q,i,x)=nd_file{i,1}{q+(colors(j)-1)*num_z + t_ind};
+                    megastack(:,:,j,q,i,x)=nd_file{i,1}{q+(colors(j)-1)*num_z + t_ind, 1};
                     planes = planes + 1;
                 end
             end
         end
+        t_ind = planes + t_ind;
     end
-    t_ind = planes + t_ind;
+    
 end
 
 
@@ -494,34 +498,51 @@ end
         end
         
         
-        
+
         
         img.ButtonDownFcn = {@MarkTimeTrack ,pts, pix_size};
-        
-        h=findobj(gca,'Type','hggroup');
-        delete(h);
-        multicolorimage = (megastack(:,:,1:num_c, slcpos, stgpos, tpos+1));
-        
-        [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
-        
-        if num_c > 1
-            [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g.Value/255);
-        end
-        
-        if num_c > 2
-            [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b.Value/255);
-        end
-        
-        img.CData=getMulticolorImageforUI(multicolorimage , num_c);
-        
-        if pts(p.Value).num_kin > 1
-            Kcheck=find(pts(stgpos).coord(:,3) == slcpos & pts(stgpos).coord(:,4) == t.Value + 1);
-            if isempty(Kcheck) == 0
-                h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
-                h.Children(1).Color=cyan;
+        if t.Value < num_t;
+            h=findobj(gca,'Type','hggroup');
+            delete(h);
+            multicolorimage = (megastack(:,:,1:num_c, slcpos, stgpos, tpos+1));
+            
+            [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
+            
+            if num_c > 1
+                [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g.Value/255);
             end
+            
+            if num_c > 2
+                [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b.Value/255);
+            end
+            
+            img.CData=getMulticolorImageforUI(multicolorimage , num_c);
+            
+            if pts(p.Value).num_kin > 1
+                Kcheck=find(pts(stgpos).coord(:,3) == slcpos & pts(stgpos).coord(:,4) == t.Value + 1);
+                if isempty(Kcheck) == 0
+                    h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
+                    h.Children(1).Color=cyan;
+                end
+            end
+            if num_t>1
+                t = uicontrol('Style', 'slider',...
+                    'Min',1,'Max',num_t,'Value',t.Value + 1,...
+                    'Position', tsliderpos,...
+                    'SliderStep', [1, 1] / (num_t - 1),...
+                    'Callback', {@get_t_pos,pts});
+            end
+        else
+            if num_t>1
+                t = uicontrol('Style', 'slider',...
+                    'Min',1,'Max',num_t,'Value',t.Value,...
+                    'Position', tsliderpos,...
+                    'SliderStep', [1, 1] / (num_t - 1),...
+                    'Callback', {@get_t_pos,pts});
+            end
+            h=viscircles(coord(1:2),4,'LineWidth',0.25);
+            h.Children(1).Color=cyan;
         end
-        
         if num_z>1
             z = uicontrol('Style', 'slider',...
                 'Min',1,'Max',num_z,'Value',z.Value,...
@@ -537,13 +558,7 @@ end
                 'Callback', {@getppos,pts});
         end
         
-        if num_t>1
-            t = uicontrol('Style', 'slider',...
-                'Min',1,'Max',num_t,'Value',t.Value + 1,...
-                'Position', tsliderpos,...
-                'SliderStep', [1, 1] / (num_t - 1),...
-                'Callback', {@get_t_pos,pts});
-        end
+
         
         %Recalls all of the sliders to update the pts struct within them
         
@@ -771,10 +786,13 @@ end
             
             
             if isempty( Kcheck ) == 0
-                h=viscircles(pts(p.Value).K1coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
+                h=viscircles(pts(p.Value).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
                 h.Children(1).Color=cyan;
             end
             
+            mark_feature_ui = uicontrol('Style', 'pushbutton', 'String', 'Track New Feature',...
+                'Position', newfeatbuttonpos,...
+                'Callback', {@mark_new_feat,pts,pix_size});
             
         end
     end
