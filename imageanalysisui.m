@@ -32,6 +32,14 @@ num_z = metadata.getPixelsSizeZ(0).getValue(); % number of Z slices
 num_c = metadata.getPixelsSizeC(0).getValue(); % number of wavelengths
 num_t = metadata.getPixelsSizeT(0).getValue(); % number of timepoints
 num_p = metadata.getImageCount(); %number of stage positions
+
+check=questdlg('Do you have a color with a different number of z steps?','Unequal Colors?','Yes','No','No');
+
+if strcmp(check,'Yes') == 1
+  num_p = num_p - 1;
+end
+
+
 timepoints = gettimestepOME(metadata, num_z, num_p, num_c , num_t); %list of timepoints
 
 
@@ -48,6 +56,8 @@ pixeldim=[ydim xdim];
 alldim=[pixeldim dimensions];
 
 megastack=zeros(alldim);
+
+
 
 
 
@@ -198,6 +208,12 @@ deletetimetrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point'
     'Position',deletetimetrackbuttonpos,...
     'Callback', {@deltimetrack,pts,pix_size});
 
+Intbuttonpos=[figsize(1)*.02 figsize(2)*.27 figsize(1)*.1 figsize(2)*.025];
+
+Ints = uicontrol('Style', 'pushbutton', 'String', 'Calculate Intensities',...
+    'Position',Intbuttonpos,...
+    'Callback', {@CalculateIntensities,pts,pix_size});
+
 max_r=255;
 
 rsliderpos=[figsize(1)*.02 figsize(2)*.17 figsize(1)*.12 figsize(2)*.025];
@@ -241,9 +257,13 @@ end
 
 
     function ppos=getppos(source,event,pts)
-        val=round(source.Value);
         
-        multicolorimage = megastack(:,:,1:num_c,z.Value,val, t.Value);
+        val=round(source.Value);
+        stgpos = val;
+        slcpos = round(z.Value);
+        tpos = round(t.Value);
+        
+        multicolorimage = megastack(:,:,1:num_c,slcpos,val, tpos);
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
         
@@ -260,15 +280,13 @@ end
         img.CData=getMulticolorImageforUI(multicolorimage,num_c);
         ppos=val;
         
-        stgpos = val;
-        slcpos = z.Value;
-        tpos = t.Value;
+
         
         if isstruct(pts) == 1
             if pts(stgpos).datatype == 1;
                 if pts(stgpos).num_kin ~= 0
-                    K1check=find(pts(stgpos).K1coord(:,3)==z.Value & pts(stgpos).K1coord(:,4)==t.Value);
-                    K2check=find(pts(stgpos).K2coord(:,3)==z.Value & pts(stgpos).K2coord(:,4)==t.Value);
+                    K1check=find(pts(stgpos).K1coord(:,3)==slcpos & pts(stgpos).K1coord(:,4)==tpos);
+                    K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==tpos);
                     if isempty(K1check) == 0
                         h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                         h.Children(1).Color=cyan;
@@ -281,7 +299,7 @@ end
                 end
             elseif pts(i).datatype == 2;
                 if pts(stgpos).num_kin ~= 0
-                    Kcheck=find(pts(stgpos).coord(:,3)==z.Value & pts(stgpos).coord(:,4)==t.Value);
+                    Kcheck=find(pts(stgpos).coord(:,3)==slcpos & pts(stgpos).coord(:,4)==tpos);
                     if isempty(Kcheck) == 0
                         h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
                         h.Children(1).Color=cyan;
@@ -290,15 +308,24 @@ end
             end
         end
         
+              numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
+        numtxt = uicontrol('Style','text',...
+            'Position',numtextpos,...
+            'String',num2str(pts(stgpos).num_kin),'FontSize',16);  
+        
     end
 
 %function that changes the stage position using the slider while maintaining the
 %z position
 
     function tpos=get_t_pos(source,event,pts)
-        val=round(source.Value);
         
-        multicolorimage = megastack(:,:,1:num_c,z.Value, p.Value, val);
+        val= round(source.Value);
+        stgpos = round(p.Value);
+        slcpos = round(z.Value);
+        tpos = round(val);
+        
+        multicolorimage = megastack(:,:,1:num_c, slcpos, stgpos, val);
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
         
@@ -314,15 +341,13 @@ end
         delete(h);
         img.CData=getMulticolorImageforUI(multicolorimage,num_c);
         
-        stgpos = p.Value;
-        slcpos = z.Value;
-        tpos = val;
+
         
         if isstruct(pts) == 1
             if pts(stgpos).datatype == 1;
                 if pts(stgpos).num_kin ~= 0
-                    K1check=find(pts(stgpos).K1coord(:,3)==slcpos & pts(stgpos).K1coord(:,4)==t.Value);
-                    K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==t.Value);
+                    K1check=find(pts(stgpos).K1coord(:,3)==slcpos & pts(stgpos).K1coord(:,4)==tpos);
+                    K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==tpos);
                     if isempty(K1check) == 0
                         h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                         h.Children(1).Color=cyan;
@@ -335,7 +360,7 @@ end
                 end
             elseif pts(i).datatype == 2;
                 if pts(stgpos).num_kin ~= 0
-                    Kcheck=find(pts(stgpos).coord(:,3)==slcpos & pts(stgpos).coord(:,4)==t.Value);
+                    Kcheck=find(pts(stgpos).coord(:,3)==slcpos & pts(stgpos).coord(:,4)==tpos);
                     if isempty(Kcheck) == 0
                         h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
                         h.Children(1).Color=cyan;
@@ -348,9 +373,13 @@ end
 
     function zpos=getsliderpos(source,event,pts)
         val=round(source.Value);
+        zpos=round(val);
+        stgpos = round(p.Value);
+        slcpos = round(val);
+        tpos = round(t.Value);
         h=findobj(gca,'Type','hggroup');
         delete(h);
-        multicolorimage = (megastack(:,:,1:num_c,val,p.Value, t.Value));
+        multicolorimage = (megastack(:,:,1:num_c,val,stgpos, tpos));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
         
@@ -363,16 +392,13 @@ end
         end
         
         img.CData=getMulticolorImageforUI(multicolorimage , num_c);
-        zpos=val;
-        stgpos = p.Value;
-        slcpos = val;
-        tpos = t.Value;
+
         
         if isstruct(pts) == 1
             if pts(stgpos).datatype == 1;
                 if pts(stgpos).num_kin ~= 0
-                    K1check=find(pts(stgpos).K1coord(:,3)==slcpos & pts(stgpos).K1coord(:,4)==t.Value);
-                    K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==t.Value);
+                    K1check=find(pts(stgpos).K1coord(:,3)==slcpos & pts(stgpos).K1coord(:,4)==tpos);
+                    K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==tpos);
                     if isempty(K1check) == 0
                         h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                         h.Children(1).Color=cyan;
@@ -385,7 +411,7 @@ end
                 end
             elseif pts(i).datatype == 2;
                 if pts(stgpos).num_kin ~= 0
-                    Kcheck=find(pts(stgpos).coord(:,3)==slcpos & pts(stgpos).coord(:,4)==t.Value);
+                    Kcheck=find(pts(stgpos).coord(:,3)==slcpos & pts(stgpos).coord(:,4)==tpos);
                     if isempty(Kcheck) == 0
                         h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
                         h.Children(1).Color=cyan;
@@ -401,7 +427,11 @@ end
 %stage position
 
     function pts=setptstopairs(source, event,pts, pix_size, timepoints)
-        msgbox('You turned on The object pair marking option. Please click on an object, and then its complement (eg. a kinetochore and its sister). Please do not press this button again until you press the "Pairs Done" button.')
+        uiwait(msgbox('You turned on The object pair marking option. Please click on an object, and then its complement (eg. a kinetochore and its sister). Please do not press this button again until you press the "Pairs Done" button.'))
+        
+        stgpos = round(p.Value);
+        slcpos = round(z.Value);
+        tpos = round(t.Value);
         
         for i=1:num_p
             s(i).num_kin=0;
@@ -416,10 +446,19 @@ end
         deletepairtrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
             'Position',deletepairtrackbuttonpos,...
             'Callback', {@delpairtrack,pts,pix_size});
+        
+        numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
+        numtxt = uicontrol('Style','text',...
+            'Position',numtextpos,...
+            'String',num2str(pts(stgpos).num_kin),'FontSize',16);
     end
 
     function ffff=setptstotime(source, event, pts, pix_size, timepoints)
         uiwait(msgbox('You turned on the time tracking option. Select "Track New Feature" to get started.'))
+        
+                stgpos = round(p.Value);
+        slcpos = round(z.Value);
+        tpos = round(t.Value);
         
         for i=1:num_p
             s(i).num_kin=0;
@@ -453,16 +492,18 @@ end
         
         feat_name = inputdlg('What is the name of this feature?', 'name', 1);
         
+        stgpos = round(p.Value);
+        slcpos = round(z.Value);
+        tpos = round(t.Value);
         
         
-        
-        if pts(p.Value).num_kin == 0;
-            pts(p.Value).feat_name=feat_name;
+        if pts(stgpos).num_kin == 0;
+            pts(stgpos).feat_name=feat_name;
         else
-            pts(p.Value).feat_name{pts(p.Value).num_kin+1} = feat_name{1};
+            pts(stgpos).feat_name{pts(stgpos).num_kin+1} = feat_name{1};
             
         end
-        pts(p.Value).num_kin = pts(p.Value).num_kin + 1;
+        pts(stgpos).num_kin = pts(stgpos).num_kin + 1;
         img.ButtonDownFcn = {@MarkTimeTrack ,pts, pix_size};
         
         mark_feature_ui = uicontrol('Style', 'pushbutton', 'String', 'Track New Feature',...
@@ -476,18 +517,19 @@ end
         
         AX=source.Parent;
         coord = get(AX, 'CurrentPoint');
-        coord = [coord(1,1) coord(1,2) z.Value t.Value pts(p.Value).num_kin];
-        stgpos=round(p.Value);
+                stgpos=round(p.Value);
         slcpos=round(z.Value);
         tpos = round(t.Value);
+        coord = [coord(1,1) coord(1,2) slcpos tpos pts(stgpos).num_kin];
+
         
         if isempty(pts(stgpos).coord) == 0
             [row, c] = find(pts(stgpos).coord(pts(stgpos).coord(:, 4) == tpos , :));
             matchcoords = pts(stgpos).coord(pts(stgpos).coord(:, 4) == tpos , :);
             if isempty(matchcoords) == 1
                 pts(stgpos).coord = [pts(stgpos).coord; coord];
-            elseif ismember(pts(p.Value).num_kin, matchcoords(:,5)) == 1
-                pts(stgpos).coord(row(matchcoords(:,5) == pts(p.Value).num_kin), :)...
+            elseif ismember(pts(stgpos).num_kin, matchcoords(:,5)) == 1
+                pts(stgpos).coord(row(matchcoords(:,5) == pts(stgpos).num_kin), :)...
                     = coord;
             else
                 pts(stgpos).coord = [pts(stgpos).coord; coord];
@@ -498,10 +540,10 @@ end
         end
         
         
-
+        
         
         img.ButtonDownFcn = {@MarkTimeTrack ,pts, pix_size};
-        if t.Value < num_t;
+        if tpos < num_t;
             h=findobj(gca,'Type','hggroup');
             delete(h);
             multicolorimage = (megastack(:,:,1:num_c, slcpos, stgpos, tpos+1));
@@ -518,8 +560,8 @@ end
             
             img.CData=getMulticolorImageforUI(multicolorimage , num_c);
             
-            if pts(p.Value).num_kin > 1
-                Kcheck=find(pts(stgpos).coord(:,3) == slcpos & pts(stgpos).coord(:,4) == t.Value + 1);
+            if pts(stgpos).num_kin > 1
+                Kcheck=find(pts(stgpos).coord(:,3) == slcpos & pts(stgpos).coord(:,4) == tpos + 1);
                 if isempty(Kcheck) == 0
                     h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
                     h.Children(1).Color=cyan;
@@ -558,7 +600,7 @@ end
                 'Callback', {@getppos,pts});
         end
         
-
+        
         
         %Recalls all of the sliders to update the pts struct within them
         
@@ -573,16 +615,20 @@ end
         savetimebutton = uicontrol('Style', 'pushbutton', 'String', 'Save time data',...
             'Position',savetimebuttonpos,...
             'Callback', {@savetime,pts,pix_size});
+        Ints = uicontrol('Style', 'pushbutton', 'String', 'Calculate Intensities',...
+            'Position',Intbuttonpos,...
+            'Callback', {@CalculateIntensities,pts,pix_size});
         
     end
 
     function pts=MarkKPairs(source, eventdata, pts, pixsize)
         AX=source.Parent;
         coord = get(AX, 'CurrentPoint');
-        coord = [coord(1,1) coord(1,2) z.Value t.Value];
-        stgpos=round(p.Value);
+                stgpos=round(p.Value);
         slcpos=round(z.Value);
         tpos = round(t.Value);
+        coord = [coord(1,1) coord(1,2) slcpos tpos];
+
         pts(stgpos).num_kin=pts(stgpos).num_kin+1;
         
         if rem(pts(stgpos).num_kin,2)==1
@@ -631,6 +677,15 @@ end
             'Position',deletepairtrackbuttonpos,...
             'Callback', {@delpairtrack,pts,pix_size});
         
+        Ints = uicontrol('Style', 'pushbutton', 'String', 'Calculate Intensities',...
+            'Position',Intbuttonpos,...
+            'Callback', {@CalculateIntensities,pts,pix_size});
+        
+                numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
+        numtxt = uicontrol('Style','text',...
+            'Position',numtextpos,...
+            'String',num2str(pts(stgpos).num_kin),'FontSize',16);
+        
     end
 
     function [pix_size]=savepairs(source, event, pts, pix_size)
@@ -657,6 +712,9 @@ end
             %reads data from file. Might use the other inputs in a later
             %build.
             img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
+                    stgpos=round(p.Value);
+        slcpos=round(z.Value);
+        tpos = round(t.Value);
             savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
                 'Position',savepairbuttonpos,...
                 'Callback', {@savepairs,pts,pix_size});
@@ -712,16 +770,24 @@ end
                 & pts( stgpos ).K2coord( :, 4 ) == timepos);
             
             if isempty( K1check ) == 0
-                h=viscircles(pts(p.Value).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
+                h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                 h.Children(1).Color=cyan;
             end
             
             if isempty( K2check ) == 0
-                h=viscircles(pts(p.Value).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
                 h.Children(1).Color=orange;
             end
-            
+                   Ints = uicontrol('Style', 'pushbutton', 'String', 'Calculate Intensities',...
+            'Position',Intbuttonpos,...
+            'Callback', {@CalculateIntensities,pts,pix_size}); 
+        
+                numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
+        numtxt = uicontrol('Style','text',...
+            'Position',numtextpos,...
+            'String',num2str(pts(stgpos).num_kin),'FontSize',16);
         end
+
     end
 
     function [pts]=opentime(source,event,pix_size)
@@ -732,6 +798,9 @@ end
             %reads data from file. Might use the other inputs in a later
             %build.
             img.ButtonDownFcn={@MarkTimeTrack,pts, pix_size};
+                    stgpos=round(p.Value);
+        slcpos=round(z.Value);
+        tpos = round(t.Value);
             savetimebutton = uicontrol('Style', 'pushbutton', 'String', 'Save time data',...
                 'Position',savetimebuttonpos,...
                 'Callback', {@savetime,pts,pix_size});
@@ -786,7 +855,7 @@ end
             
             
             if isempty( Kcheck ) == 0
-                h=viscircles(pts(p.Value).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
+                h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
                 h.Children(1).Color=cyan;
             end
             
@@ -794,7 +863,11 @@ end
                 'Position', newfeatbuttonpos,...
                 'Callback', {@mark_new_feat,pts,pix_size});
             
+                   Ints = uicontrol('Style', 'pushbutton', 'String', 'Calculate Intensities',...
+            'Position',Intbuttonpos,...
+            'Callback', {@CalculateIntensities,pts,pix_size}); 
         end
+
     end
 
     function [pts]=delpairtrack(source, event, pts, pix_size)
@@ -812,9 +885,9 @@ end
             end
             
             if num_t > 1
-                timepos = round(t.Value);
+                tpos = round(t.Value);
             else
-                timepos = 1;
+                tpos = 1;
             end
             
             if pts(stgpos).num_kin > 0
@@ -832,17 +905,17 @@ end
                 delete( h );
                 
                 K1check=find( pts( stgpos ).K1coord( :, 3 ) == slcpos...
-                    & pts( stgpos ).K1coord( :, 4 ) == timepos);
+                    & pts( stgpos ).K1coord( :, 4 ) == tpos);
                 K2check=find( pts( stgpos ).K2coord( :, 3 ) == slcpos...
-                    & pts( stgpos ).K2coord( :, 4 ) == timepos);
+                    & pts( stgpos ).K2coord( :, 4 ) == tpos);
                 
                 if isempty( K1check ) == 0
-                    h=viscircles(pts(p.Value).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
+                    h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                     h.Children(1).Color=cyan;
                 end
                 
                 if isempty( K2check ) == 0
-                    h=viscircles(pts(p.Value).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                    h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
                     h.Children(1).Color=orange;
                 end
                 
@@ -886,10 +959,18 @@ end
                 
                 %removes the all the circles
                 
+                        numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
+        numtxt = uicontrol('Style','text',...
+            'Position',numtextpos,...
+            'String',num2str(pts(stgpos).num_kin),'FontSize',16);
+                
             else
                 msgbox( 'No tracks to delete!' )
             end
         end
+        Ints = uicontrol('Style', 'pushbutton', 'String', 'Calculate Intensities',...
+            'Position',Intbuttonpos,...
+            'Callback', {@CalculateIntensities,pts,pix_size});
     end
 
     function [pts]=deltimetrack(source, event, pts, pix_size)
@@ -907,9 +988,9 @@ end
             end
             
             if num_t > 1
-                timepos = round(t.Value);
+                tpos = round(t.Value);
             else
-                timepos = 1;
+                tpos = 1;
             end
             
             if isempty(pts(stgpos).coord) == 0
@@ -925,11 +1006,11 @@ end
                 delete( h );
                 
                 Kcheck=find( pts( stgpos ).coord( :, 3 ) == slcpos...
-                    & pts( stgpos ).coord( :, 4 ) == timepos);
+                    & pts( stgpos ).coord( :, 4 ) == tpos);
                 
                 
                 if isempty( Kcheck ) == 0
-                    h=viscircles(pts(p.Value).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
+                    h=viscircles(pts(stgpos).coord(Kcheck,1:2),4*ones(1,length(Kcheck)),'LineWidth',0.25);
                     h.Children(1).Color=cyan;
                 end
                 
@@ -966,7 +1047,7 @@ end
                     'Position',opentimebuttonpos,...
                     'Callback', {@opentime,pix_size});
                 
-                img.ButtonDownFcn={@MarkTimeTracks,pts, pix_size};
+                img.ButtonDownFcn={@MarkTimeTrack,pts, pix_size};
                 
                 deletetimetrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
                     'Position',deletetimetrackbuttonpos,...
@@ -979,9 +1060,17 @@ end
                 msgbox( 'No tracks to delete!' )
             end
         end
+        Ints = uicontrol('Style', 'pushbutton', 'String', 'Calculate Intensities',...
+            'Position',Intbuttonpos,...
+            'Callback', {@CalculateIntensities,pts,pix_size});
     end
 
     function [r_scaler] = getRpos(source, events, pts, r_scaler, pix_size)
+       
+                stgpos=round(p.Value);
+        slcpos=round(z.Value);
+        tpos = round(t.Value);
+        
         val=(source.Value);
         
         r_scaler = val / 255;
@@ -990,7 +1079,7 @@ end
         
         b_scaler = b.Value / 255;
         
-        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value, t.Value));
+        multicolorimage = ( megastack( :, :, 1:num_c, slcpos, stgpos, tpos));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
@@ -1013,13 +1102,17 @@ end
     function [g_scaler] = getGpos(source, events, pts, g_scaler, pix_size)
         val=(source.Value);
         
+                stgpos=round(p.Value);
+        slcpos=round(z.Value);
+        tpos = round(t.Value);
+        
         g_scaler = val / 255;
         
         r_scaler = r.Value / 255;
         
         b_scaler = b.Value / 255;
         
-        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value, t.Value));
+        multicolorimage = ( megastack( :, :, 1:num_c, slcpos, stgpos, tpos));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
@@ -1041,11 +1134,15 @@ end
         
         b_scaler = val / 255;
         
+                stgpos=round(p.Value);
+        slcpos=round(z.Value);
+        tpos = round(t.Value);
+        
         r_scaler = r.Value / 255;
         
         g_scaler = g.Value / 255;
         
-        multicolorimage = ( megastack( :, :, 1:num_c, z.Value, p.Value, t.Value));
+        multicolorimage = ( megastack( :, :, 1:num_c, slcpos, stgpos, tpos));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
@@ -1059,6 +1156,78 @@ end
         
     end
 
+    function [intesities]=CalculateIntensities(source, event, pts, pix_size)
+        rect_size=str2double(inputdlg('What size of square will you use?','Square size',1,...
+            {'7'}));
+                stgpos=round(p.Value);
+        slcpos=round(z.Value);
+        tpos = round(t.Value);
+        for i = 1:numel(pts)
+            if pts(i).datatype == 1 && pts(i).num_kin > 0;
+                int1 = [];
+                int2 = [];
+                
+                coord1 = pts(i).K1coord;
+                coord2 = pts(i).K2coord;
+                for q = 1:num_c
+                    tempint1 = [];
+                    tempint2 = [];
+                    for j=1:size(coord1,1)
+                        
+                        x1 = coord1(j,1);
+                        y1 = coord1(j,2);
+                        z1 = coord1(j,3);
+                        t1 = coord1(j,4);
+                        x2 = coord2(j,1);
+                        y2 = coord2(j,2);
+                        z2 = coord2(j,3);
+                        t2 = coord2(j,4);
+                        [ int ] = IntCalc_ImAlGui( megastack( :, :, q, z1, i, t1) , [x1 y1], rect_size );
+                        tempint1 = [tempint1; int];
+                        [ int ] = IntCalc_ImAlGui( megastack( :, :, q, z2, i, t2) , [x2 y2], rect_size );
+                        tempint2 = [tempint2; int];
+                    end
+                    int1 = [int1 tempint1];
+                    int2 = [int2 tempint2];
+                end
+                pts(i).K1_Intensities = int1;
+                pts(i).K2_Intensities = int2;
+            elseif pts(i).datatype == 2 && pts(i).num_kin > 0;
+                int1 = [];
+                
+                
+                coord= pts(i).coord;
+                
+                for q = 1:num_c
+                    tempint = [];
+                    
+                    for j=1:size(coord,1)
+                        
+                        x1 = coord(j,1);
+                        y1 = coord(j,2);
+                        z1 = coord(j,3);
+                        t1 = coord(j,4);
+                        
+                        [ int ] = IntCalc_ImAlGui( megastack( :, :, q, z1, i, t1) , [x1 y1], rect_size );
+                        tempint = [tempint; int];
+                        
+                    end
+                    int1 = [int1 tempint];
+                    
+                end
+                pts(i).Intensities = int1;
+                
+            end
+            
+        end
+        
+        if pts(1).datatype == 2
+            pix_size = WriteTimeDataToFile_ImAlGui( pts, pix_size, 'Intensities' )
+        else
+            pix_size = WritePairDataToFile_ImAlGui( pts, pix_size, 'Intensities' )
+        end
+        
+    end
 
 
 

@@ -1,12 +1,22 @@
-function [ data_struct, data_matrix, column_labels] = ReadTimeDataFromFile_Analysis(FileName)
+function [ data_struct, data_matrix, column_labels] = ReadTimeDataFromFile_Analysis(varargin)
 %Reads data made from the write pair data ImAlGui code back into the image
 %analysis GUI. Outputs the neccessary struct, but also a matrix containing
 %all the data, as well as a series of labels indicating the values in
 %columns
+FileName = varargin{1};
+
+if length(varargin) > 1
+     intcheck = strcmp(varargin{2}, 'Intensities');
+else
+    intcheck = 0;
+end
 
 
 [ data, column_labels, raw] = xlsread(FileName, 1);
 [objdata, objtxt, raw] = xlsread(FileName, 2);
+if intcheck == 1
+    [intdata, dummy, meh] = xlsread(FileName, 3);
+end
 %get excel file
 
 data_matrix = data(isnan(data(:,1))==0, 1:6);
@@ -39,6 +49,10 @@ for i=1:num_p
        data_struct(i).feat_name = objtxt(objdata(2, :) == i);
        %Fills up struct with data for tracking
        data_struct(i).datatype = 2;
+       if intcheck == 1
+       data_struct(i).Intensities = intdata(intdata(:,size(intdata,2))...
+           == i, 1:size(intdata,2)-1);
+       end
     else
        data_struct(i).coord = [];
        

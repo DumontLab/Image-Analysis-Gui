@@ -8,6 +8,8 @@ ind = 0;
 
 matrix = [];
 
+check=questdlg('Do you have intensity data?','Save data?','Yes','No','No');
+
 timepoints = [];
 
 for i = 1:numel(info)
@@ -20,7 +22,14 @@ for i = 1:numel(info)
             
             ind = ind + 1;
             
-            [ struct(ind).movie, temp_matrix, labels ] = ReadTimeDataFromFile_Analysis(info(i).name);
+            if strcmp(check,'No')
+                
+                [ struct(ind).movie, temp_matrix, labels ] = ReadTimeDataFromFile_Analysis(info(i).name);
+                
+            else
+                [ struct(ind).movie, temp_matrix, labels ] =...
+                    ReadTimeDataFromFile_Analysis(info(i).name,'Intensities');
+            end
             
             matrix = [ matrix; temp_matrix ];
             

@@ -4,6 +4,7 @@ function time = gettimestepOME(metadata, z, p, c , t)
 
 totalsize = z * c * t;
 
+
 for i = 0 : p - 1
     
     plane = 0;

@@ -12,13 +12,11 @@ end
 %pulls out a default pixel size, if stated.
 
 if length(varargin)>2
-    default_filename=varargin{3};
-else
-    defaultfilename='Tracking File.xls';
+    intcheck = strcmp(varargin{3}, 'Intensities');
 end
 %pulls out a default pixel size, if stated.
 
-
+int_matrix = [];
 data_matrix=[];
 
 %Empty vector that will contain the pair data from the struct data 
@@ -35,6 +33,11 @@ for i=1:numel(data)
         %Builds a matrix with all kinetochore coordinate data  for a given
         %stage position as well as the position itself
         data_matrix=[data_matrix; tempmatrix];
+                if intcheck == 1
+            tempint = [data(i).K1Intensities data(i).K2Intensities];
+            tempint = [tempint i*ones(size(tempint,1),1)];
+            int_matrix = [int_matrix; tempint];
+        end
     end
     timepoints = [timepoints data(i).timepoints];
 end
@@ -75,6 +78,11 @@ cd(pathname)
 pix_size=str2num(pix_size{1});
 
 xlswrite(filename,sheetdata);
+if intcheck == 1
+    
+    xlswrite(filename, int_matrix, 3);
+
+end
 
 
 
