@@ -43,7 +43,7 @@ num_p = metadata.getImageCount(); %number of stage positions
 check=questdlg('Do you have a color with a different number of z steps?','Unequal Colors?','Yes','No','No');
 
 if strcmp(check,'Yes') == 1
-    num_p = num_p - 1;
+  num_p = num_p - 1;
 end
 
 
@@ -132,7 +132,7 @@ if num_z>1
         'SliderStep', [1, 1] / (num_z - 1),...
         'Callback', {@getsliderpos,pts});
     
-    zcounter = uicontrol('Style','text',...
+        zcounter = uicontrol('Style','text',...
         'Position',zcounterpos,...
         'String','1');
 else
@@ -144,7 +144,7 @@ end
 
 psliderpos=[figsize(1)*.2 figsize(2)*.08 figsize(1)*.75 figsize(2)*.025];
 
-pcounterpos=[figsize(1)*.955 figsize(2)*.078 figsize(1)*.02 figsize(2)*.025];
+pcounterpos=[figsize(1)*.955 figsize(2)*.078 figsize(1)*.02igsize(2)*.025];
 
 if num_p>1
     p = uicontrol('Style', 'slider',...
@@ -153,7 +153,7 @@ if num_p>1
         'SliderStep', [1, 1] / (num_p - 1),...
         'Callback', {@getppos,pts});
     
-    pcounter = uicontrol('Style','text',...
+            pcounter = uicontrol('Style','text',...
         'Position',pcounterpos,...
         'String','1');
 else
@@ -162,7 +162,7 @@ end
 
 tsliderpos=[figsize(1)*.2 figsize(2)*.13 figsize(1)*.75 figsize(2)*.025];
 
-tcounterpos=[figsize(1)*.955 figsize(2)*.128 figsize(1)*.02 figsize(2)*.025];
+
 
 if num_t>1
     t = uicontrol('Style', 'slider',...
@@ -170,10 +170,6 @@ if num_t>1
         'Position', tsliderpos,...
         'SliderStep', [1, 1] / (num_t - 1),...
         'Callback', {@get_t_pos,pts});
-    
-    tcounter = uicontrol('Style','text',...
-        'Position',tcounterpos,...
-        'String','1');
 else
     t.Value=1;
 end
@@ -316,7 +312,7 @@ end
         img.CData=getMulticolorImageforUI(multicolorimage,num_c);
         ppos=val;
         
-        
+
         
         if isstruct(pts) == 1
             if pts(stgpos).datatype == 1;
@@ -342,19 +338,13 @@ end
                     end
                 end
             end
-            numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
-            numtxt = uicontrol('Style','text',...
-                'Position',numtextpos,...
-                'String',num2str(pts(stgpos).num_kin),'FontSize',16);
-            
         end
         
+              numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
+        numtxt = uicontrol('Style','text',...
+            'Position',numtextpos,...
+            'String',num2str(pts(stgpos).num_kin),'FontSize',16);  
         
-        
-        
-        pcounter = uicontrol('Style','text',...
-            'Position',pcounterpos,...
-            'String',num2str(stgpos));
     end
 
 %function that changes the stage position using the slider while maintaining the
@@ -383,7 +373,7 @@ end
         delete(h);
         img.CData=getMulticolorImageforUI(multicolorimage,num_c);
         
-        
+
         
         if isstruct(pts) == 1
             if pts(stgpos).datatype == 1;
@@ -411,9 +401,6 @@ end
             end
             %Redraws circles if they have been tracked using the Kpair tracker
         end
-        tcounter = uicontrol('Style','text',...
-            'Position',tcounterpos,...
-            'String',num2str(tpos));
     end
 
     function zpos=getsliderpos(source,event,pts)
@@ -437,7 +424,7 @@ end
         end
         
         img.CData=getMulticolorImageforUI(multicolorimage , num_c);
-        
+
         
         if isstruct(pts) == 1
             if pts(stgpos).datatype == 1;
@@ -466,9 +453,6 @@ end
             %Redraws circles if they have been tracked using the Kpair tracker
         end
         %Redraws circles if they have been tracked using the Kpair tracker
-        zcounter = uicontrol('Style','text',...
-            'Position',zcounterpos,...
-            'String',num2str(slcpos));
     end
 
 %function that changes the zposition using the slider while maintaining the
@@ -508,7 +492,7 @@ end
     function ffff=setptstotime(source, event, pts, pix_size, timepoints)
         uiwait(msgbox('You turned on the time tracking option. Select "Track New Feature" to get started.'))
         
-        stgpos = round(p.Value);
+                stgpos = round(p.Value);
         slcpos = round(z.Value);
         tpos = round(t.Value);
         
@@ -569,11 +553,11 @@ end
         
         AX=source.Parent;
         coord = get(AX, 'CurrentPoint');
-        stgpos=round(p.Value);
+                stgpos=round(p.Value);
         slcpos=round(z.Value);
         tpos = round(t.Value);
         coord = [coord(1,1) coord(1,2) slcpos tpos pts(stgpos).num_kin];
-        
+
         
         if isempty(pts(stgpos).coord) == 0
             [row, c] = find(pts(stgpos).coord(pts(stgpos).coord(:, 4) == tpos , :));
@@ -676,11 +660,11 @@ end
     function pts=MarkKPairs(source, eventdata, pts, pixsize)
         AX=source.Parent;
         coord = get(AX, 'CurrentPoint');
-        stgpos=round(p.Value);
+                stgpos=round(p.Value);
         slcpos=round(z.Value);
         tpos = round(t.Value);
         coord = [coord(1,1) coord(1,2) slcpos tpos];
-        
+
         pts(stgpos).num_kin=pts(stgpos).num_kin+1;
         
         if rem(pts(stgpos).num_kin,2)==1
@@ -733,7 +717,7 @@ end
             'Position',Intbuttonpos,...
             'Callback', {@CalculateIntensities,pts,pix_size});
         
-        numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
+                numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
         numtxt = uicontrol('Style','text',...
             'Position',numtextpos,...
             'String',num2str(pts(stgpos).num_kin),'FontSize',16);
@@ -768,9 +752,9 @@ end
             %reads data from file. Might use the other inputs in a later
             %build.
             img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
-            stgpos=round(p.Value);
-            slcpos=round(z.Value);
-            tpos = round(t.Value);
+                    stgpos=round(p.Value);
+        slcpos=round(z.Value);
+        tpos = round(t.Value);
             savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
                 'Position',savepairbuttonpos,...
                 'Callback', {@savepairs,pts,pix_size});
@@ -834,16 +818,16 @@ end
                 h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
                 h.Children(1).Color=orange;
             end
-            Ints = uicontrol('Style', 'pushbutton', 'String', 'Calculate Intensities',...
-                'Position',Intbuttonpos,...
-                'Callback', {@CalculateIntensities,pts,pix_size});
-            
-            numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
-            numtxt = uicontrol('Style','text',...
-                'Position',numtextpos,...
-                'String',num2str(pts(stgpos).num_kin),'FontSize',16);
-        end
+                   Ints = uicontrol('Style', 'pushbutton', 'String', 'Calculate Intensities',...
+            'Position',Intbuttonpos,...
+            'Callback', {@CalculateIntensities,pts,pix_size}); 
         
+                numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
+        numtxt = uicontrol('Style','text',...
+            'Position',numtextpos,...
+            'String',num2str(pts(stgpos).num_kin),'FontSize',16);
+        end
+
     end
 
     function [pts]=opentime(source,event,pix_size)
@@ -854,9 +838,9 @@ end
             %reads data from file. Might use the other inputs in a later
             %build.
             img.ButtonDownFcn={@MarkTimeTrack,pts, pix_size};
-            stgpos=round(p.Value);
-            slcpos=round(z.Value);
-            tpos = round(t.Value);
+                    stgpos=round(p.Value);
+        slcpos=round(z.Value);
+        tpos = round(t.Value);
             savetimebutton = uicontrol('Style', 'pushbutton', 'String', 'Save time data',...
                 'Position',savetimebuttonpos,...
                 'Callback', {@savetime,pts,pix_size});
@@ -919,11 +903,11 @@ end
                 'Position', newfeatbuttonpos,...
                 'Callback', {@mark_new_feat,pts,pix_size});
             
-            Ints = uicontrol('Style', 'pushbutton', 'String', 'Calculate Intensities',...
-                'Position',Intbuttonpos,...
-                'Callback', {@CalculateIntensities,pts,pix_size});
+                   Ints = uicontrol('Style', 'pushbutton', 'String', 'Calculate Intensities',...
+            'Position',Intbuttonpos,...
+            'Callback', {@CalculateIntensities,pts,pix_size}); 
         end
-        
+
     end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1019,10 +1003,10 @@ end
                 
                 %removes the all the circles
                 
-                numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
-                numtxt = uicontrol('Style','text',...
-                    'Position',numtextpos,...
-                    'String',num2str(pts(stgpos).num_kin),'FontSize',16);
+                        numtextpos=[figsize(1)*.965 figsize(2)*.5 figsize(1)*.025 figsize(2)*.05];
+        numtxt = uicontrol('Style','text',...
+            'Position',numtextpos,...
+            'String',num2str(pts(stgpos).num_kin),'FontSize',16);
                 
             else
                 msgbox( 'No tracks to delete!' )
@@ -1130,8 +1114,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     function [r_scaler] = getRpos(source, events, pts, r_scaler, pix_size)
-        
-        stgpos=round(p.Value);
+       
+                stgpos=round(p.Value);
         slcpos=round(z.Value);
         tpos = round(t.Value);
         
@@ -1166,7 +1150,7 @@ end
     function [g_scaler] = getGpos(source, events, pts, g_scaler, pix_size)
         val=(source.Value);
         
-        stgpos=round(p.Value);
+                stgpos=round(p.Value);
         slcpos=round(z.Value);
         tpos = round(t.Value);
         
@@ -1198,7 +1182,7 @@ end
         
         b_scaler = val / 255;
         
-        stgpos=round(p.Value);
+                stgpos=round(p.Value);
         slcpos=round(z.Value);
         tpos = round(t.Value);
         
@@ -1227,7 +1211,7 @@ end
     function [intesities]=CalculateIntensities(source, event, pts, pix_size)
         rect_size=str2double(inputdlg('What size of square will you use?','Square size',1,...
             {'7'}));
-        stgpos=round(p.Value);
+                stgpos=round(p.Value);
         slcpos=round(z.Value);
         tpos = round(t.Value);
         for i = 1:numel(pts)
