@@ -562,6 +562,10 @@ end
             'Position', newfeatbuttonpos,...
             'Callback', {@mark_new_feat,pts,pix_size});
         
+        savetimebutton = uicontrol('Style', 'pushbutton', 'String', 'Save time data',...
+            'Position',savetimebuttonpos,...
+            'Callback', {@savetime,pts,pix_size});
+        
         
     end
 
@@ -612,6 +616,10 @@ end
             
             img.CData=getMulticolorImageforUI(multicolorimage , num_c);
             
+            tcounter = uicontrol('Style','text',...
+                'Position',tcounterpos,...
+                'String',num2str(tpos + 1 ));
+            
             if pts(stgpos).num_kin > 1
                 Kcheck=find(pts(stgpos).coord(:,3) == slcpos & pts(stgpos).coord(:,4) == tpos + 1);
                 if isempty(Kcheck) == 0
@@ -625,6 +633,8 @@ end
                     'Position', tsliderpos,...
                     'SliderStep', [1, 1] / (num_t - 1),...
                     'Callback', {@get_t_pos,pts});
+                
+
             end
         else
             if num_t>1
@@ -633,6 +643,8 @@ end
                     'Position', tsliderpos,...
                     'SliderStep', [1, 1] / (num_t - 1),...
                     'Callback', {@get_t_pos,pts});
+                
+
             end
             h=viscircles(coord(1:2),4,'LineWidth',0.25);
             h.Children(1).Color=cyan;
@@ -881,6 +893,10 @@ end
                     'Position', tsliderpos,...
                     'SliderStep', [1, 1] / (num_t - 1),...
                     'Callback', {@get_t_pos,pts});
+                
+                tcounter = uicontrol('Style','text',...
+                    'Position',tcounterpos,...
+                    'String',num2str(tpos));
             end
             deletetimetrack = uicontrol('Style', 'pushbutton', 'String', 'Delete last point',...
                 'Position',deletetimetrackbuttonpos,...
