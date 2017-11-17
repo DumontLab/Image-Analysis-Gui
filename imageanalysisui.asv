@@ -1284,16 +1284,16 @@ end
                             x2 = coord2(j,1);
                             y2 = coord2(j,2);
                             t2 = coord2(j,4);
-                            for h = 1:num_z
+                            for z = 1:num_z
                                 
-                                z1 = h;
+                                z1 = z;
                                 
-                                z2 = h;
+                                z2 = z;
                                 
-                                [ z_int_1(h) ] = IntCalc_ImAlGui( megastack( :, :, q, z1, i, t1) , [x1 y1], rect_size );
+                                [ z_int_1(z) ] = IntCalc_ImAlGui( megastack( :, :, q, z1, i, t1) , [x1 y1], rect_size );
                                 
                                 
-                                [ z_int_2(h) ] = IntCalc_ImAlGui( megastack( :, :, q, z2, i, t2) , [x2 y2], rect_size );
+                                [ z_int_2(z) ] = IntCalc_ImAlGui( megastack( :, :, q, z2, i, t2) , [x2 y2], rect_size );
                                 
                                 
                             end
@@ -1304,7 +1304,6 @@ end
                             
                             
                         end
-                    end
                         int1 = [int1 tempint1];
                         int2 = [int2 tempint2];
                     end
@@ -1332,24 +1331,12 @@ end
                             
                             [ int ] = IntCalc_ImAlGui( megastack( :, :, q, z1, i, t1) , [x1 y1], rect_size );
                             tempint = [tempint; int];
-                            
+                        
                         elseif strcmp(check, 'Yes') == 1
                             
-                            x1 = coord(j,1);
-                            y1 = coord(j,2);
                             
-                            t1 = coord(j,4);
-                            
-                            for h = 1:num_z
-                                
-                                z1 = h;
-                            
-                            [  z_int_1(h) ] = IntCalc_ImAlGui( megastack( :, :, q, z1, i, t1) , [x1 y1], rect_size );
-                            end
-                            
-                            tempint = [tempint; sum( z_int_1 )];
-                        end
-                            
+                        
+                        
                         
                     end
                     int1 = [int1 tempint];
@@ -1362,17 +1349,9 @@ end
         end
         
         if pts(1).datatype == 2
-            pix_size = WriteTimeDataToFile_ImAlGui( pts, pix_size, 'Intensities' );
-            img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
-            savetimebutton = uicontrol('Style', 'pushbutton', 'String', 'Save time data',...
-                'Position',savetimebuttonpos,...
-                'Callback', {@savetime,pts,pix_size});
+            pix_size = WriteTimeDataToFile_ImAlGui( pts, pix_size, 'Intensities' )
         else
-            pix_size = WritePairDataToFile_ImAlGui( pts, pix_size, 'Intensities' );
-            img.ButtonDownFcn={@MarkKPairs,pts, pix_size};
-            savepair = uicontrol('Style', 'pushbutton', 'String', 'Save pair data',...
-                'Position',savepairbuttonpos,...
-                'Callback', {@savepairs,pts,pix_size});
+            pix_size = WritePairDataToFile_ImAlGui( pts, pix_size, 'Intensities' )
         end
         
     end
