@@ -44,7 +44,7 @@ for i = 1:numel(info)
             obj_struct = [obj_struct obj_struct_temp];
             
             
-            temp_matrix(:, size(temp_matrix,2) + 1) = ind*ones(size(temp_matrix,1),1);
+            tempmatrix
             
             matrix = [ matrix; temp_matrix ];
             

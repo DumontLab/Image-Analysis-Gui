@@ -83,13 +83,13 @@ cd(pathname)
 
 pix_size=str2num(pix_size{1});
 
-xlwrite(filename, sheetdata);
+xlwrite(filename, sheetdata, 'Sheet1');
 
-xlwrite(filename, object, 2);
+xlwrite(filename, object, 'Sheet2');
 
 if intcheck == 1
     
-    xlwrite(filename, int_matrix, 3);
+    xlwrite(filename, int_matrix, 'Sheet3');
 
 end
 

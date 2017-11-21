@@ -31,6 +31,7 @@ timepoints = data(:, 8 : 8 + num_p - 1);
 
 time_column = [];
 
+for i = 1:num_p
     
     
 %seperates out the data that goes back in the struct vs the number of
@@ -98,12 +99,10 @@ for i = 1:numel(data_struct)
         end
         obj_struct(ind).time = struct.timepoints(obj_struct(ind).t);
         obj_struct(ind).objname = struct.feat_name(1,j);
-        time_column = [time_column; obj_struct(ind).time]; 
+        time_column = [time_obj_struct(ind).time 
     
     end
 end
-
-data_matrix = [data_matrix time_column];
 
 if intcheck == 1
 
