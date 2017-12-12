@@ -1,12 +1,21 @@
-function [ data_struct, data_matrix, column_labels] = ReadPairDataFromFile_ImAlGui
+function [ data_struct, data_matrix, column_labels] = ReadPairDataFromFile_ImAlGui_Analysis
 %Reads data made from the write pair data ImAlGui code back into the image
 %analysis GUI. Outputs the neccessary struct, but also a matrix containing
 %all the data, as well as a series of labels indicating the values in
 %columns
 
+check = questdlg('Do you have intensity data?','Intensity?','Yes','No','No');
+
+intcheck = strcmp(check, 'Yes');
+
 [FileName,PathName] = uigetfile('.xls');
 cd(PathName)
-data = xlsread(FileName);
+[ data, column_labels, raw] = xlsread(FileName, 'Sheet1');
+
+if intcheck == 1
+    [intdata, dummy, meh] = xlsread(FileName, 'Sheet2');
+end
+
 %get excel file
 
 data_matrix = data(isnan(data(:,1))==0, 1:10);
@@ -36,12 +45,16 @@ for i=1:num_p
        %get all data with at the current stage positions
        data_struct(i).K1coord = temp(:, 1:4);
        data_struct(i).K2coord = temp(:, 5:8);
-       data_struct(i).num_kin = size(temp, 1)*2;
+       data_struct(i).num_kin = size(temp, 1);
        data_struct(i).timepoints = timepoints(:,i);
        %Fills up struct with data for tracking
        data_struct(i).datatype = 1;
+       if intcheck ==1
+           data_struct(i).intensities = intdata(intdata(:,size(intdata,2))...
+               == i, 1:size(intdata,2)-1);
+       end
     else
-       data_struct(i).K1coord = [];
+        data_struct(i).K1coord = [];
        data_struct(i).K2coord = [];
        data_struct(i).num_kin = 0;
        data_struct(i).timepoints = timepoints(:,i);
@@ -50,4 +63,3 @@ for i=1:num_p
     end
     
 end
-

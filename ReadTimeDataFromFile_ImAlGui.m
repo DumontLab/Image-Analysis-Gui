@@ -6,8 +6,8 @@ function [ data_struct, data_matrix, column_labels] = ReadTimeDataFromFile_ImAlG
 
 [FileName,PathName] = uigetfile('.xls');
 cd(PathName)
-[ data, column_labels, raw] = xlsread(FileName, 'Sheet 1','basic');
-[objdata, objtxt, raw] = xlsread(FileName, 'Sheet 2','basic');
+[ data, column_labels, raw] = xlsread(FileName, 'Sheet1','basic');
+[objdata, objtxt, raw] = xlsread(FileName, 'Sheet2','basic');
 %get excel file
 
 data_matrix = data(isnan(data(:,1))==0, 1:6);

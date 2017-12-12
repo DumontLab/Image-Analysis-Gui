@@ -60,16 +60,16 @@ for i=1:num_p
        %Fills up struct with data for tracking
        data_struct(i).datatype = 2;
        if intcheck == 1
-       data_struct(i).intensities = intdata(intdata(:,size(intdata,2))...
-           == i, 1:size(intdata,2)-1);
+           data_struct(i).intensities = intdata(intdata(:,size(intdata,2))...
+               == i, 1:size(intdata,2)-1);
        end
     else
-       data_struct(i).coord = [];
-       
-       data_struct(i).num_kin = 0;
-       data_struct(i).timepoints = timepoints(:,i);
-       data_struct(i).datatype = 2;
-       %fills empty stage positions
+        data_struct(i).coord = [];
+        
+        data_struct(i).num_kin = 0;
+        data_struct(i).timepoints = timepoints(:,i);
+        data_struct(i).datatype = 2;
+        %fills empty stage positions
     end
     
 end

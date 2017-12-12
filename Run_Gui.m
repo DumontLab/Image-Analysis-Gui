@@ -11,6 +11,10 @@ javaaddpath('20130227_xlwrite/poi_library/dom4j-1.6.1.jar');
 
 if exist('data') ~= 1
     data = bfopen;
+    
+    dimensions = dimensionchange(data);
+    
 end
 
-imageanalysisui(data)
+imageanalysisui(data,dimensions)
+

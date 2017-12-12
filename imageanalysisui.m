@@ -35,10 +35,24 @@ orange =  [0.956862745098039,0.498039215686275,0.215686274509804];
 metadata=nd_file{1,4};
 xdim = metadata.getPixelsSizeX(0).getValue(); % image width, pixels
 ydim = metadata.getPixelsSizeY(0).getValue(); % image height, pixels
+if length(varargin)<2
 num_z = metadata.getPixelsSizeZ(0).getValue(); % number of Z slices
 num_c = metadata.getPixelsSizeC(0).getValue(); % number of wavelengths
 num_t = metadata.getPixelsSizeT(0).getValue(); % number of timepoints
 num_p = metadata.getImageCount(); %number of stage positions
+else
+    dims = varargin{2};
+    
+    num_t = dims(1);
+    
+    num_z = dims(2);
+    
+    num_p = dims(3);
+    
+    num_c = dims(4);
+    
+    %changes the dimensions according to your inputs
+end
 
 check=questdlg('Do you have a color with a different number of z steps?','Unequal Colors?','Yes','No','No');
 
@@ -322,14 +336,17 @@ end
             if pts(stgpos).datatype == 1;
                 if pts(stgpos).num_kin ~= 0
                     K1check=find(pts(stgpos).K1coord(:,3)==slcpos & pts(stgpos).K1coord(:,4)==tpos);
-                    K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==tpos);
+                    
                     if isempty(K1check) == 0
                         h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                         h.Children(1).Color=cyan;
                     end
-                    if isempty(K2check) == 0
-                        h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
-                        h.Children(1).Color=orange;
+                    if pts(stgpos).num_kin > 1 
+                        K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==tpos);
+                        if isempty(K2check) == 0
+                            h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                            h.Children(1).Color=orange;
+                        end
                     end
                     %Redraws circles if they have been tracked using the Kpair tracker
                 end
@@ -389,14 +406,17 @@ end
             if pts(stgpos).datatype == 1;
                 if pts(stgpos).num_kin ~= 0
                     K1check=find(pts(stgpos).K1coord(:,3)==slcpos & pts(stgpos).K1coord(:,4)==tpos);
-                    K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==tpos);
+                    
                     if isempty(K1check) == 0
                         h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                         h.Children(1).Color=cyan;
                     end
-                    if isempty(K2check) == 0
-                        h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
-                        h.Children(1).Color=orange;
+                    if pts(stgpos).num_kin > 1
+                        K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==tpos);
+                        if isempty(K2check) == 0
+                            h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                            h.Children(1).Color=orange;
+                        end
                     end
                     %Redraws circles if they have been tracked using the Kpair tracker
                 end
@@ -443,14 +463,17 @@ end
             if pts(stgpos).datatype == 1;
                 if pts(stgpos).num_kin ~= 0
                     K1check=find(pts(stgpos).K1coord(:,3)==slcpos & pts(stgpos).K1coord(:,4)==tpos);
-                    K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==tpos);
+                   
                     if isempty(K1check) == 0
                         h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                         h.Children(1).Color=cyan;
                     end
-                    if isempty(K2check) == 0
-                        h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
-                        h.Children(1).Color=orange;
+                    if pts(stgpos).num_kin > 1
+                        K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==tpos);
+                        if isempty(K2check) == 0
+                            h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
+                            h.Children(1).Color=orange;
+                        end
                     end
                     %Redraws circles if they have been tracked using the Kpair tracker
                 end

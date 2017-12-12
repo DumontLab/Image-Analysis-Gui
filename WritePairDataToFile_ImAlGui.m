@@ -13,7 +13,12 @@ end
 
 if length(varargin)>2
     intcheck = strcmp(varargin{3}, 'Intensities');
+
+else
+    
+    intcheck = 0;
 end
+
 %pulls out a default pixel size, if stated.
 
 int_matrix = [];
@@ -34,7 +39,7 @@ for i=1:numel(data)
         %stage position as well as the position itself
         data_matrix=[data_matrix; tempmatrix];
                 if intcheck == 1
-            tempint = [data(i).K1Intensities data(i).K2Intensities];
+            tempint = [data(i).K1_Intensities data(i).K2_Intensities];
             tempint = [tempint i*ones(size(tempint,1),1)];
             int_matrix = [int_matrix; tempint];
         end
@@ -71,10 +76,12 @@ celldata(1:size(timepoints,1),12:12 + size(timepoints,2) - 1) = num2cell(timepoi
 %adds in the total number of positions. Important for reconstructing the
 %data struct.
 
-sheetdata=[data_key; celldata];
+sheetdata=[data_key];
+
+
 
 cd(pathname)
-
+sheetdata(2:size(celldata,1) + 1 ,1:size( celldata, 2))= celldata;
 pix_size=str2num(pix_size{1});
 
 xlwrite(filename,sheetdata, 'Sheet1');
