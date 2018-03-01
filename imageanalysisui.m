@@ -98,6 +98,7 @@ for i=1:num_p
             colors= [1 2 3 4];
             drop=input('Too many colors! Please chose which channel to drop (1-4) ');
             colors(colors==drop)=[];
+            num_c = 3;
             for j=1:num_c
                 for q=1:num_z
                     megastack(:,:,j,q,i,x)=nd_file{i,1}{q+(colors(j)-1)*num_z + t_ind, 1};
