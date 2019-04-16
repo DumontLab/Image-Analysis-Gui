@@ -8,7 +8,7 @@ if numColors==1
 elseif numColors==2
     %for two colors the imfuse function works
     imageToDisplay=imfuse(imframes(:,:,2),imframes(:,:,1));
-elseif numColors==3
+elseif numColors > 2
     %for three colors, a single pixelXpixelX3 matrix will work, but needs
     %to be scaled so values are between 0 and 1
     for i=1:3

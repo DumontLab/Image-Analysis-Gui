@@ -1,19 +1,39 @@
-function [ data_struct, data_matrix, column_labels] = ReadPairDataFromFile_ImAlGui_Analysis
+function [ data_struct, data_matrix, column_labels] = ReadPairDataFromFile_ImAlGui_Analysis(varargin)
 %Reads data made from the write pair data ImAlGui code back into the image
 %analysis GUI. Outputs the neccessary struct, but also a matrix containing
 %all the data, as well as a series of labels indicating the values in
 %columns
 
-check = questdlg('Do you have intensity data?','Intensity?','Yes','No','No');
 
-intcheck = strcmp(check, 'Yes');
+FileName = varargin{1};
 
-[FileName,PathName] = uigetfile('.xls');
-cd(PathName)
-[ data, column_labels, raw] = xlsread(FileName, 'Sheet1');
+if length(varargin) > 1
+    intcheck = strcmp(varargin{2}, 'Intensities');
+else
+    intcheck = 0;
+end
 
-if intcheck == 1
-    [intdata, dummy, meh] = xlsread(FileName, 'Sheet2');
+
+
+if length(varargin) < 1
+    check = questdlg('Do you have intensity data?','Intensity?','Yes','No','No');
+    
+    intcheck = strcmp(check, 'Yes');
+    
+    [FileName,PathName] = uigetfile('.xls');
+    cd(PathName)
+    [ data, column_labels, raw] = xlsread(FileName, 'Sheet1');
+    
+    if intcheck == 1
+        [intdata, dummy, meh] = xlsread(FileName, 'Sheet2');
+    end
+    
+else
+    [ data, column_labels, raw] = xlsread(FileName, 'Sheet1');
+     if intcheck == 1
+        [intdata, dummy, meh] = xlsread(FileName, 'Sheet2');
+    end
+    
 end
 
 %get excel file

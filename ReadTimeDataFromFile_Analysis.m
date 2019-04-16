@@ -27,7 +27,8 @@ num_p = (data(isnan(data(:, 7)) == 0,7));
 
 num_t = (max(data_matrix(:,4)));
 
-timepoints = data(:, 8 : 8 + num_p - 1); 
+timepoints = data(:, 8 : 8 + num_p - 1);
+timepoints(isnan(timepoints)==1) = [];
 
 time_column = [];
 

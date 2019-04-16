@@ -1,5 +1,4 @@
-function [megastack, sparestack, drop] = Make_megastack(nd_file)
-% Dimensions for final stack: (x, y, c, z, t, p)
+function megastack = Make_megastack_noprompts(nd_file)
 
 metadata=nd_file{1,4};
 xdim = metadata.getPixelsSizeX(0).getValue(); % image width, pixels
@@ -11,14 +10,6 @@ num_t = metadata.getPixelsSizeT(0).getValue(); % number of timepoints
 num_p = metadata.getImageCount(); %number of stage positions
 
     
-
-
-check=questdlg('Do you have a color with a different number of z steps?','Unequal Colors?','Yes','No','No');
-
-if strcmp(check,'Yes') == 1
-    num_p = num_p - 1;
-end
-
 
 
 
@@ -54,9 +45,7 @@ for i=1:num_p
                 end
             end
         else
-            colors= [1 2 3 4];
-%             drop=input('Too many colors! Please chose which channel to drop (1-4) ');
-            %colors(colors==drop)=[];
+
             for j=1:num_c
                 for q=1:num_z
                     megastack(:,:,j,q,i,x)=nd_file{i,1}{q+(colors(j)-1)*num_z + t_ind, 1};
@@ -68,13 +57,3 @@ for i=1:num_p
     end
     
 end
-
-% if num_c > 3
-%     if num_t > 1
-%         sparestack = megastack(:,:, drop, :, :, :);
-%         megastack(:, :, drop, :, :, :) = [];
-%     else
-%         sparestack = megastack(:,:, drop, :, :);
-%         megastack(:, :, drop, :, :) = [];
-%     end
-% end

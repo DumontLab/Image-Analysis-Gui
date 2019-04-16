@@ -12,7 +12,7 @@ check=questdlg('Do you have intensity data?','Save data?','Yes','No','No');
 
 timepoints = [];
 
-obj_struct = [];
+
 
 for i = 1:numel(info)
     
@@ -26,7 +26,7 @@ for i = 1:numel(info)
             
             if strcmp(check,'No')
                 
-                [ struct(ind).movie, temp_matrix, labels, obj_struct_temp ] = ReadTimeDataFromFile_Analysis(info(i).name);
+                [ struct(ind).movie, temp_matrix, labels ] = ReadPairDataFromFile_ImAlGui_Analysis(info(i).name);
                 
                 
                 
@@ -35,15 +35,7 @@ for i = 1:numel(info)
                     ReadTimeDataFromFile_Analysis(info(i).name,'Intensities');
             end
             
-            for j=1:numel(obj_struct_temp) 
-                
-                obj_struct_temp(j).moviename = info(i).name;
-                
-            end
-            
 
-            
-            obj_struct = [obj_struct obj_struct_temp];
             
             
             temp_matrix(:, size(temp_matrix,2) + 1) = ind*ones(size(temp_matrix,1),1);
@@ -65,4 +57,4 @@ data_matrix = matrix;
 
 movie_struct = struct;
 
-clearvars -except obj_struct data_matrix movie_struct
+clearvars -except obj_struct data_matrix movie_struct folder_name

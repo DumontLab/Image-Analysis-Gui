@@ -36,10 +36,10 @@ metadata=nd_file{1,4};
 xdim = metadata.getPixelsSizeX(0).getValue(); % image width, pixels
 ydim = metadata.getPixelsSizeY(0).getValue(); % image height, pixels
 if length(varargin)<2
-num_z = metadata.getPixelsSizeZ(0).getValue(); % number of Z slices
-num_c = metadata.getPixelsSizeC(0).getValue(); % number of wavelengths
-num_t = metadata.getPixelsSizeT(0).getValue(); % number of timepoints
-num_p = metadata.getImageCount(); %number of stage positions
+    num_z = metadata.getPixelsSizeZ(0).getValue(); % number of Z slices
+    num_c = metadata.getPixelsSizeC(0).getValue(); % number of wavelengths
+    num_t = metadata.getPixelsSizeT(0).getValue(); % number of timepoints
+    num_p = metadata.getImageCount(); %number of stage positions
 else
     dims = varargin{2};
     
@@ -97,8 +97,12 @@ for i=1:num_p
         else
             colors= [1 2 3 4];
             drop=input('Too many colors! Please chose which channel to drop (1-4) ');
-            colors(colors==drop)=[];
-            num_c = 3;
+            
+            drop = str2double(drop);
+            disp_colors = colors;
+            disp_colors(ismember(colors, drop)) = [];
+            %colors(colors==drop)=[];
+            %num_c = 3;
             for j=1:num_c
                 for q=1:num_z
                     megastack(:,:,j,q,i,x)=nd_file{i,1}{q+(colors(j)-1)*num_z + t_ind, 1};
@@ -114,7 +118,7 @@ end
 
 %builds one gigantic stack to pull data from: X x Y x C x Z x P
 
-displayimage=megastack(:,:,1:num_c,1,1);
+displayimage=megastack(:,:,disp_colors,1,1);
 
 imageToDisplay=getMulticolorImageforUI(displayimage,num_c);
 
@@ -199,6 +203,19 @@ kpair = uicontrol('Style', 'pushbutton', 'String', 'Mark pairs',...
     'Position', kpairbuttonpos,...
     'Callback', {@setptstopairs,pts,pix_size,timepoints});
 
+if num_c > 3
+    
+    chan_change_buttonpos=[figsize(1)*.02 figsize(2)*.33 figsize(1)*.10 figsize(2)*.025];
+    
+    chan_change = uicontrol('Style', 'pushbutton', 'String', 'Change color',...
+        'Position', chan_change_buttonpos,...
+        'Callback', {@recolor, pts});
+    
+    handles.disp_colors = disp_colors;
+
+else
+    handles.disp_colors = disp_colors;
+end
 %sets the callback function on the image to be "MarkKPairs"
 
 timetrackbuttonpos=[figsize(1)*.02 figsize(2)*.6 figsize(1)*.10 figsize(2)*.025];
@@ -314,7 +331,7 @@ end
         slcpos = round(z.Value);
         tpos = round(t.Value);
         
-        multicolorimage = megastack(:,:,1:num_c,slcpos,val, tpos);
+        multicolorimage = megastack(:,:,handles.disp_colors,slcpos,val, tpos);
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
         
@@ -342,7 +359,7 @@ end
                         h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                         h.Children(1).Color=cyan;
                     end
-                    if pts(stgpos).num_kin > 1 
+                    if pts(stgpos).num_kin > 1
                         K2check=find(pts(stgpos).K2coord(:,3)==slcpos & pts(stgpos).K2coord(:,4)==tpos);
                         if isempty(K2check) == 0
                             h=viscircles(pts(stgpos).K2coord(K2check,1:2),4*ones(1,length(K2check)),'LineWidth',0.25);
@@ -385,7 +402,7 @@ end
         slcpos = round(z.Value);
         tpos = round(val);
         
-        multicolorimage = megastack(:,:,1:num_c, slcpos, stgpos, val);
+        multicolorimage = megastack(:,:,handles.disp_colors, slcpos, stgpos, val);
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
         
@@ -437,7 +454,7 @@ end
             'String',num2str(tpos));
     end
 
-    function zpos=getsliderpos(source,event,pts)
+    function zpos=getsliderpos(source, event, pts)
         val=round(source.Value);
         zpos=round(val);
         stgpos = round(p.Value);
@@ -445,7 +462,7 @@ end
         tpos = round(t.Value);
         h=findobj(gca,'Type','hggroup');
         delete(h);
-        multicolorimage = (megastack(:,:,1:num_c,val,stgpos, tpos));
+        multicolorimage = (megastack(:,:,handles.disp_colors,val,stgpos, tpos));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
         
@@ -464,7 +481,7 @@ end
             if pts(stgpos).datatype == 1;
                 if pts(stgpos).num_kin ~= 0
                     K1check=find(pts(stgpos).K1coord(:,3)==slcpos & pts(stgpos).K1coord(:,4)==tpos);
-                   
+                    
                     if isempty(K1check) == 0
                         h=viscircles(pts(stgpos).K1coord(K1check,1:2),4*ones(1,length(K1check)),'LineWidth',0.25);
                         h.Children(1).Color=cyan;
@@ -626,7 +643,7 @@ end
         if tpos < num_t;
             h=findobj(gca,'Type','hggroup');
             delete(h);
-            multicolorimage = (megastack(:,:,1:num_c, slcpos, stgpos, tpos+1));
+            multicolorimage = (megastack(:,:,handles.disp_colors, slcpos, stgpos, tpos+1));
             
             [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r.Value/255);
             
@@ -658,7 +675,7 @@ end
                     'SliderStep', [1, 1] / (num_t - 1),...
                     'Callback', {@get_t_pos,pts});
                 
-
+                
             end
         else
             if num_t>1
@@ -668,7 +685,7 @@ end
                     'SliderStep', [1, 1] / (num_t - 1),...
                     'Callback', {@get_t_pos,pts});
                 
-
+                
             end
             h=viscircles(coord(1:2),4,'LineWidth',0.25);
             h.Children(1).Color=cyan;
@@ -1183,7 +1200,7 @@ end
         
         b_scaler = b.Value / 255;
         
-        multicolorimage = ( megastack( :, :, 1:num_c, slcpos, stgpos, tpos));
+        multicolorimage = ( megastack( :, :, handles.disp_colors, slcpos, stgpos, tpos));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
@@ -1216,7 +1233,7 @@ end
         
         b_scaler = b.Value / 255;
         
-        multicolorimage = ( megastack( :, :, 1:num_c, slcpos, stgpos, tpos));
+        multicolorimage = ( megastack( :, :, handles.disp_colors, slcpos, stgpos, tpos));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
@@ -1246,7 +1263,7 @@ end
         
         g_scaler = g.Value / 255;
         
-        multicolorimage = ( megastack( :, :, 1:num_c, slcpos, stgpos, tpos));
+        multicolorimage = ( megastack( :, :, handles.disp_colors, slcpos, stgpos, tpos));
         
         [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
         
@@ -1272,7 +1289,7 @@ end
         tpos = round(t.Value);
         
         if num_z>1
-           check = questdlg( 'Do you want to sum over all z-Positions?','Z stack?','Yes','No','No' );
+            check = questdlg( 'Do you want to sum over all z-Positions?','Z stack?','Yes','No','No' );
         else
             check = 'No';
         end
@@ -1329,20 +1346,20 @@ end
                             
                         end
                     end
-                        int1 = [int1 tempint1];
-                        int2 = [int2 tempint2];
-                    end
-                    pts(i).K1_Intensities = int1;
-                    pts(i).K2_Intensities = int2;
-                    elseif pts(i).datatype == 2 && pts(i).num_kin > 0;
-                        int1 = [];
+                    int1 = [int1 tempint1];
+                    int2 = [int2 tempint2];
+                end
+                pts(i).K1_Intensities = int1;
+                pts(i).K2_Intensities = int2;
+            elseif pts(i).datatype == 2 && pts(i).num_kin > 0;
+                int1 = [];
                 
                 
                 coord= pts(i).coord;
                 
                 for q = 1:num_c
                     tempint = [];
-                  
+                    
                     
                     
                     for j=1:size(coord,1)
@@ -1367,13 +1384,13 @@ end
                             for h = 1:num_z
                                 
                                 z1 = h;
-                            
-                            [  z_int_1(h) ] = IntCalc_ImAlGui( megastack( :, :, q, z1, i, t1) , [x1 y1], rect_size );
+                                
+                                [  z_int_1(h) ] = IntCalc_ImAlGui( megastack( :, :, q, z1, i, t1) , [x1 y1], rect_size );
                             end
                             
                             tempint = [tempint; sum( z_int_1 )];
                         end
-                            
+                        
                         
                     end
                     int1 = [int1 tempint];
@@ -1400,6 +1417,101 @@ end
         end
         
     end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%       CHANGE CHANNELS       %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    function [disp_colors] = recolor(source, events, pts)
+        d = figure('Position',[300 300 250 170],'Name','Select One');
+        
+        txt = uicontrol('Parent',d,...
+            'Style','text',...
+            'Position',[20 130 210 20],...
+            'String','Select a channel to DROP');
+        
+        bg = uibuttongroup('Parent',d,...
+            'Visible','off','Position',[0.25 .35 0.5 0.4], ...
+            'SelectionChangedFcn',{@bg_value, colors});
+        
+        r1 = uicontrol(bg,'Style',...
+            'radiobutton',...
+            'Units', 'normalized',...
+            'Position', [0.2 0.8 .7 .2],...
+            'String','Channel 1',...
+            'HandleVisibility','off');
+        
+        r2 = uicontrol(bg,'Style',...
+            'radiobutton',...
+            'Units', 'normalized',...
+            'Position', [0.2 0.55 .7 .2],...
+            'String','Channel 2',...
+            'HandleVisibility','off');
+        
+        r3 = uicontrol(bg,'Style',...
+            'radiobutton',...
+            'Units', 'normalized',...
+            'Position', [0.2 0.3 .7 .2],...
+            'String','Channel 3',...
+            'HandleVisibility','off');
+        
+        r4 = uicontrol(bg,'Style',...
+            'radiobutton',...
+            'Units', 'normalized',...
+            'Position', [0.2 0.05 .7 .2],...
+            'String','Channel 4',...
+            'HandleVisibility','off');
+        
+        btn = uicontrol('Parent',d,...
+            'Position',[89 20 70 25],...
+            'String','Close',...
+            'Callback','delete(gcf)');
+        
+        bg.Visible = 'on';
+        
+        
+        
+        % Wait for d to close before running to completion
+        
+        % uiwait(d);
+        
+        function disp_colors = bg_value(source, event, colors)
+            disp([event.NewValue.String ' dropped']);
+            channel = str2double(event.NewValue.String(length(event.NewValue.String)));
+            
+            disp_colors = colors;
+            
+            disp_colors(ismember(disp_colors, channel)) = [];
+            
+            stgpos=round(p.Value);
+            slcpos=round(z.Value);
+            tpos = round(t.Value);
+            
+            g_scaler = g.Value / 255;
+            
+            r_scaler = r.Value / 255;
+            
+            b_scaler = b.Value / 255;
+            
+            multicolorimage = ( megastack( :, :, disp_colors, slcpos, stgpos, tpos));
+            
+            [ multicolorimage( :, :, 1 ) ] = scaleimage(multicolorimage( :, :, 1 ), r_scaler);
+            
+            [ multicolorimage( :, :, 2 ) ] = scaleimage(multicolorimage( :, :, 2 ), g_scaler);
+            
+            [ multicolorimage( :, :, 3 ) ] = scaleimage(multicolorimage( :, :, 3 ), b_scaler);
+            
+            img.CData=getMulticolorImageforUI(multicolorimage, num_c);
+            
+            handles.disp_colors = disp_colors;
+            
+            
+            %disp(disp_colors)
+            
+        end
+        
+    end
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
