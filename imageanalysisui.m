@@ -56,8 +56,11 @@ end
 
 check=questdlg('Do you have a color with a different number of z steps?','Unequal Colors?','Yes','No','No');
 
-if strcmp(check,'Yes') == 1
-    num_p = num_p - 1;
+if strcmp(check,'Yes') == 1   
+    pos_ind = (1: 2 : num_p);
+    num_p = num_p / 2;
+else
+    pos_ind = (1 : num_p);
 end
 
 
@@ -78,15 +81,21 @@ alldim=[pixeldim dimensions];
 
 megastack=zeros(alldim);
 
+if num_c > 3
+    colors= [1 2 3 4];
+    drop=input('Too many colors! Please chose which channel to drop (1-4) ');
+    
+    drop = str2double(drop);
+    disp_colors = colors;
+    disp_colors(ismember(colors, drop)) = [];
+end
 
-
-
-
-for i=1:num_p
+for i=pos_ind
     t_ind=0;
     for x=1:num_t
         planes=0;
         if num_c < 4
+            disp_colors = 1:num_c;
             for j=1:num_c
                 for q=1:num_z
                     megastack(:,:,j,q,i,x)=nd_file{i,1}{q+(j-1)*num_z + t_ind, 1};
@@ -95,12 +104,7 @@ for i=1:num_p
                 end
             end
         else
-            colors= [1 2 3 4];
-            drop=input('Too many colors! Please chose which channel to drop (1-4) ');
             
-            drop = str2double(drop);
-            disp_colors = colors;
-            disp_colors(ismember(colors, drop)) = [];
             %colors(colors==drop)=[];
             %num_c = 3;
             for j=1:num_c
@@ -212,7 +216,7 @@ if num_c > 3
         'Callback', {@recolor, pts});
     
     handles.disp_colors = disp_colors;
-
+    
 else
     handles.disp_colors = disp_colors;
 end
@@ -790,6 +794,7 @@ end
         numtxt = uicontrol('Style','text',...
             'Position',numtextpos,...
             'String',num2str(pts(stgpos).num_kin),'FontSize',16);
+        uicontrol(z);
         
     end
 
@@ -872,6 +877,12 @@ end
             
             h=findobj( gca, 'Type', 'hggroup' );
             delete( h );
+            
+            if isempty(pts( stgpos ).K1coord) == 1
+                while isempty(pts( stgpos ).K1coord) == 1
+                    stgpos = stgpos + 1;
+                end
+            end
             
             K1check=find( pts( stgpos ).K1coord( :, 3 ) == slcpos...
                 & pts( stgpos ).K1coord( :, 4 ) == timepos);

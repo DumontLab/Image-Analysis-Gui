@@ -5,7 +5,7 @@ function [ data_struct, data_matrix, column_labels] = ReadPairDataFromFile_ImAlG
 %columns
 
 
-FileName = varargin{1};
+
 
 if length(varargin) > 1
     intcheck = strcmp(varargin{2}, 'Intensities');
@@ -28,9 +28,12 @@ if length(varargin) < 1
         [intdata, dummy, meh] = xlsread(FileName, 'Sheet2');
     end
     
+elseif length(varargin) == 1
+    FileName = varargin{1};
 else
+    FileName = varargin{1};
     [ data, column_labels, raw] = xlsread(FileName, 'Sheet1');
-     if intcheck == 1
+    if intcheck == 1
         [intdata, dummy, meh] = xlsread(FileName, 'Sheet2');
     end
     
@@ -44,7 +47,7 @@ num_p = (data(isnan(data(:, 11)) == 0,11));
 
 num_t = (max(data_matrix(:,4)));
 
-timepoints = data(:, 12 : 12 + num_p - 1); 
+timepoints = data(:, 12 : 12 + num_p - 1);
 
 %seperates out the data that goes back in the struct vs the number of
 %stage position the goes back in the struct. Gets the number of positions
@@ -60,26 +63,26 @@ stage_positions = unique(data_matrix(:, 9));
 
 for i=1:num_p
     if ismember(i, stage_positions) == 1
-       %fill struct with data if this stageposition has tracks
-       temp = data_matrix(data_matrix(:, 9) == i,:);
-       %get all data with at the current stage positions
-       data_struct(i).K1coord = temp(:, 1:4);
-       data_struct(i).K2coord = temp(:, 5:8);
-       data_struct(i).num_kin = size(temp, 1);
-       data_struct(i).timepoints = timepoints(:,i);
-       %Fills up struct with data for tracking
-       data_struct(i).datatype = 1;
-       if intcheck ==1
-           data_struct(i).intensities = intdata(intdata(:,size(intdata,2))...
-               == i, 1:size(intdata,2)-1);
-       end
+        %fill struct with data if this stageposition has tracks
+        temp = data_matrix(data_matrix(:, 9) == i,:);
+        %get all data with at the current stage positions
+        data_struct(i).K1coord = temp(:, 1:4);
+        data_struct(i).K2coord = temp(:, 5:8);
+        data_struct(i).num_kin = size(temp, 1);
+        data_struct(i).timepoints = timepoints(:,i);
+        %Fills up struct with data for tracking
+        data_struct(i).datatype = 1;
+        if intcheck ==1
+            data_struct(i).intensities = intdata(intdata(:,size(intdata,2))...
+                == i, 1:size(intdata,2)-1);
+        end
     else
         data_struct(i).K1coord = [];
-       data_struct(i).K2coord = [];
-       data_struct(i).num_kin = 0;
-       data_struct(i).timepoints = timepoints(:,i);
-       %fills empty stage positions
-       data_struct(i).datatype = 1;
+        data_struct(i).K2coord = [];
+        data_struct(i).num_kin = 0;
+        data_struct(i).timepoints = timepoints(:,i);
+        %fills empty stage positions
+        data_struct(i).datatype = 1;
     end
     
 end

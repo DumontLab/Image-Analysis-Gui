@@ -31,19 +31,22 @@ for i = 1:numel(info)
                 
                 
             else
-                [ struct(ind).movie, temp_matrix, labels, obj_struct_temp ] =...
-                    ReadTimeDataFromFile_Analysis(info(i).name,'Intensities');
+                [ struct(ind).movie, temp_matrix, labels ] =...
+                    ReadPairDataFromFile_ImAlGui_Analysis(info(i).name,'Intensities');
             end
             
-
+            
             
             
             temp_matrix(:, size(temp_matrix,2) + 1) = ind*ones(size(temp_matrix,1),1);
             
             matrix = [ matrix; temp_matrix ];
             
-            struct(ind).movie.movie_name = info(i).name;
-            struct(ind).movie.stack_loaded = 0;
+            for j = 1:numel(struct(ind).movie)
+                
+                struct(ind).movie(j).movie_name = info(i).name;
+                struct(ind).movie(j).stack_loaded = 0;
+            end
             
             
             
